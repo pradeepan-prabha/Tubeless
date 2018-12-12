@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/navigation_item_1"
+            android:checked="true"
+            android:icon="@drawable/ic_action_search"
+            android:title="Item One" />
+        <item
+            android:id="@+id/navigation_item_2"
+            android:icon="@drawable/ic_action_add"
+            android:title="Item Two" />
+    </group>
+
+
+</menu>

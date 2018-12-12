@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!--<ImageView-->
+    <!--android:id="@+id/imageView"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="170dp"-->
+    <!--android:layout_weight="1"-->
+    <!--android:scaleType="centerCrop"-->
+    <!--android:tag="image_tag" />-->
+    <LinearLayout
+        android:id="@+id/youtube_playerLo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="10">
+
+        <com.google.android.youtube.player.YouTubePlayerView
+            android:id="@+id/youtube_player"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="5">
+
+        <android.support.v4.widget.NestedScrollView
+            android:id="@+id/nestedScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/title_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/youtube_playerLo"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/textViewName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="10dp"
+                        android:layout_marginLeft="10dp"
+                        android:maxLines="2"
+                        android:text="Android Name sjdnjas ajsk djak sjdka kaskdjaksdj kjskdjaksj"
+                        android:textAppearance="?android:attr/textAppearanceLarge"
+                        android:textSize="18dp" />
+
+                </LinearLayout>
+                <!--real image size is 40x50px-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/youtube_player"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/img_left_header"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_margin="10dp"
+                        android:onClick="share_btn_pressed"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/share"
+                        android:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/img_download"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_margin="10dp"
+                        android:onClick="downloadVideo"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_download_outline"
+                        android:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/img_bookmark"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_margin="10dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_bookmarks_outline"
+                        android:visibility="visible" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/shadow" />
+
+                <TextView
+                    android:id="@+id/textViewDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:maxLines="1"
+                    android:text="Android Name sjdnjas ajskdjaksjdka kaskdjaksdj kjskdjaksj"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:textColor="@color/common_gray_txt"
+                    android:textSize="16dp" />
+
+                <TextView
+                    android:id="@+id/textViewDes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/title_layout"
+                    android:layout_margin="10dp"
+                    android:maxLines="4"
+                    android:text="Android Name sjdnjas ajskdjaksjdka kaskdjaksdj kjskdjaksjAndroid Name sjdnjas ajskdjaksjdka kaskdjaksdj kjskdjaksjAndroid Name sjdnjas ajskdjaksjdka kaskdjaksdj kjskdjaksjAndroid Name sjdnjas ajskdjaksjdka kaskdjaksdj kjskdjaksjAndroid Name sjdnjas ajskdjaksjdka kaskdjaksdj kjskdjaksj"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:textColor="@color/common_gray_txt"
+                    android:textSize="16dp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/shadow" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:text="Up next"
+                        android:textColor="@color/common_blue_bg" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <android.support.v7.widget.RecyclerView
+                            android:id="@+id/mList_videos"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </RelativeLayout>
+                </LinearLayout>
+
+                <!--<ImageView-->
+                <!--android:layout_width="40dp"-->
+                <!--android:layout_height="40dp"-->
+                <!--android:layout_alignParentRight="true"-->
+                <!--android:layout_marginTop="155dp"-->
+                <!--android:layout_marginRight="20dp"-->
+                <!--android:onClick="playVideo"-->
+                <!--android:src="@drawable/play"/>-->
+            </LinearLayout>
+        </android.support.v4.widget.NestedScrollView>
+    </RelativeLayout>
+</LinearLayout>

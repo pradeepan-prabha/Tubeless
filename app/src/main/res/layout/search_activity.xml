@@ -1,0 +1,57 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_drawer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:titleTextColor="@color/white"
+                android:background="?attr/colorPrimary">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:orientation="horizontal">
+
+                    <SearchView
+                        android:id="@+id/searchView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:backgroundTint="@color/white"
+                        android:closeIcon="@drawable/ic_close_white_24dp"
+                        android:elevation="2dp"
+                        android:inputType="text"
+                        android:queryHint="Search"
+                        android:theme="@style/SearchViewTheme"
+                        android:searchIcon="@drawable/ic_search_white_24dp" />
+                </LinearLayout>
+
+            </android.support.v7.widget.Toolbar>
+        </RelativeLayout>
+    <!--    <include layout="@layout/toolbar" />-->
+
+        <FrameLayout
+            android:id="@+id/nav_contentframe"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="?attr/actionBarSize"
+            android:background="@android:color/background_light">
+
+
+        </FrameLayout>
+    </RelativeLayout>
+</LinearLayout>

@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Tubeless</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="search">Search Channel.....</string>
+    <string name="action_search">Search</string>
+    <string name="channelKey">channel</string>
+    <string name="videoKey">videos</string>
+    <string name="channelBannerImageKey">channelBannerImage</string>
+    <string name="playlistKey">playlist</string>
+    <integer name="swing_anim_time">750</integer>
+    <string name="android_desserts">Android Desserts</string>
+    <string name="video">Videos</string>
+    <string name="Channel">Channel</string>
+</resources>
