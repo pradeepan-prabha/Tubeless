@@ -16,9 +16,11 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 import com.techmind.tubeless.adapters.CommentAdapter;
 import com.techmind.tubeless.adapters.VideoPostAdapter;
 import com.techmind.tubeless.config.AppController;
@@ -35,6 +37,7 @@ import com.google.android.youtube.player.YouTubeBaseActivity;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
 import com.google.android.youtube.player.YouTubePlayerView;
+import com.techmind.tubeless.pojo.Post;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -49,17 +52,19 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import at.huber.youtubeExtractor.YouTubeUriExtractor;
 import at.huber.youtubeExtractor.YtFile;
 
 import static com.techmind.tubeless.config.ConstURL.CHANNEL_GET_URL;
+import static com.techmind.tubeless.config.ConstURL.GOOGLE_YOUTUBE_API_KEY;
+import static com.techmind.tubeless.config.ConstURL.VIDEOS_TYPE;
 
 
 public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubePlayer.OnInitializedListener {
     private static final int READ_STORAGE_PERMISSION_REQUEST_CODE = 1;
-    private static String GOOGLE_YOUTUBE_API = "AIzaSyBH8szUCt1ctKQabVeQuvWgowaKxHVjn8E";
     private YoutubeDataModel youtubeDataModel = null;
     TextView textViewName;
     TextView textViewDes;
@@ -76,6 +81,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     private VideoPostAdapter adapter=null;
     ArrayList<YoutubeDataModel> mList = new ArrayList<>();
     private String kind;
+    private ImageButton img_bookmark;
 
 
     @Override
@@ -86,10 +92,11 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         Log.e("", youtubeDataModel.getDescription());
 
         mYoutubePlayerView = (YouTubePlayerView) findViewById(R.id.youtube_player);
-        mYoutubePlayerView.initialize(GOOGLE_YOUTUBE_API, this);
+        mYoutubePlayerView.initialize(GOOGLE_YOUTUBE_API_KEY, this);
 
         textViewName = (TextView) findViewById(R.id.textViewName);
         textViewDes = (TextView) findViewById(R.id.textViewDes);
+        img_bookmark = findViewById(R.id.img_bookmark);
         // imageViewIcon = (ImageView) findViewById(R.id.imageView);
         textViewDate = (TextView) findViewById(R.id.textViewDate);
 
@@ -113,7 +120,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
 //            e.printStackTrace();
 //        }
         getChannelListFromServer("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
-                "&part=contentDetails&relatedToVideoId="+youtubeDataModel.getVideo_id() +"&maxResults=10&key="+GOOGLE_YOUTUBE_API);
+                "&part=contentDetails&relatedToVideoId="+youtubeDataModel.getVideo_id() +"&maxResults=10&key="+GOOGLE_YOUTUBE_API_KEY);
         if (!checkPermissionForReadExtertalStorage()) {
             try {
                 requestPermissionForReadExtertalStorage();
@@ -121,6 +128,21 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                 e.printStackTrace();
             }
         }
+        img_bookmark.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Add sample post to the database
+                 System.out.println("youtubeDataModel.getVideo_id()%%%%% = " + youtubeDataModel.getVideo_id());
+
+                if(PostsDatabaseHelper.getInstance(view.getContext()).addPost(youtubeDataModel,VIDEOS_TYPE)){
+                    Toast.makeText(getApplicationContext(),"Video is Bookmarked successfully",Toast.LENGTH_SHORT).show();
+                }else {
+                    Toast.makeText(getApplicationContext(),"Video is already Bookmarked",Toast.LENGTH_SHORT).show();
+
+                }
+            }
+        });
+
 
     }
     private void getChannelListFromServer(String url) {
@@ -322,7 +344,8 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
 
     @Override
     public void onInitializationFailure(YouTubePlayer.Provider provider, YouTubeInitializationResult youTubeInitializationResult) {
-
+        System.out.println("YouTubePlayer.Provider *****= " + provider);
+        System.out.println("youTubeInitializationResult = " + youTubeInitializationResult);
     }
 
     public void share_btn_pressed(View view) {
@@ -516,7 +539,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     }
 
     private void requestYoutubeCommentAPI() {
-        String VIDEO_COMMENT_URL = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=100&videoId=" + youtubeDataModel.getVideo_id() + "&key=" + GOOGLE_YOUTUBE_API;
+        String VIDEO_COMMENT_URL = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&maxResults=100&videoId=" + youtubeDataModel.getVideo_id() + "&key=" + GOOGLE_YOUTUBE_API_KEY;
 
         JSONObject jsonObjUserDetail = new JSONObject();
         System.out.println("VIDEO_COMMENT_URL*************= " + VIDEO_COMMENT_URL);

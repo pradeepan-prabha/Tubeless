@@ -67,29 +67,35 @@
 
                     <ImageView
                         android:id="@+id/img_left_header"
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
                         android:layout_margin="10dp"
                         android:onClick="share_btn_pressed"
                         android:scaleType="fitCenter"
                         android:src="@drawable/share"
+                        android:padding="5dp"
+                        android:background="?android:attr/selectableItemBackground"
                         android:visibility="visible" />
 
                     <ImageView
                         android:id="@+id/img_download"
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
                         android:layout_margin="10dp"
+                        android:padding="5dp"
                         android:onClick="downloadVideo"
                         android:scaleType="fitCenter"
+                        android:background="?android:attr/selectableItemBackground"
                         android:src="@drawable/ic_download_outline"
                         android:visibility="visible" />
 
-                    <ImageView
+                    <ImageButton
+                        android:background="?android:attr/selectableItemBackground"
                         android:id="@+id/img_bookmark"
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
                         android:layout_margin="10dp"
+                        android:padding="5dp"
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_bookmarks_outline"
                         android:visibility="visible" />

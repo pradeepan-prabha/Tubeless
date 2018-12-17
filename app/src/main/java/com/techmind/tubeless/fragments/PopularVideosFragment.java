@@ -23,7 +23,6 @@ import com.techmind.tubeless.MyCustomObject;
 import com.techmind.tubeless.R;
 import com.techmind.tubeless.VideoPlayerActivity;
 import com.techmind.tubeless.YoutubeAdapter;
-import com.techmind.tubeless.YoutubeConnector;
 import com.techmind.tubeless.adapters.VideoPostAdapter;
 import com.techmind.tubeless.config.AppController;
 import com.techmind.tubeless.config.ConstURL;
@@ -183,7 +182,7 @@ public class PopularVideosFragment extends Fragment {
                 //calling our search method created below with input keyword entered by user
                 //by getText method which returns Editable type, get string by toString method
                 if (!title.isEmpty() && !requestType.isEmpty()) {
-                    searchOnYoutube(title, requestType);
+//                    searchOnYoutube(title, requestType);
                     mListData.clear();
                 } else {
                     Toast.makeText(getContext(), "Select request Type", Toast.LENGTH_SHORT).show();
@@ -574,7 +573,7 @@ public class PopularVideosFragment extends Fragment {
         return mList;
 
     }
-    //custom search method which takes argument as the keyword for which videos is to be searched
+  /*  //custom search method which takes argument as the keyword for which videos is to be searched
     private void searchOnYoutube(final String keywords, final String requestType) {
 
         //A thread that will execute the searching and inflating the RecyclerView as and when
@@ -609,7 +608,7 @@ public class PopularVideosFragment extends Fragment {
             //starting the thread
         }.start();
     }
-
+*/
     //method for creating adapter and setting it to recycler view
     private void fillYoutubeVideos() {
 

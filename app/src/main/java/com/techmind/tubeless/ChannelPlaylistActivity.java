@@ -15,9 +15,12 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 import com.techmind.tubeless.adapters.VideoPostAdapter;
 import com.techmind.tubeless.config.AppController;
 import com.techmind.tubeless.config.ConstURL;
@@ -40,6 +43,7 @@ import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
+import static com.techmind.tubeless.config.ConstURL.CHANNEL_TYPE;
 import static com.techmind.tubeless.config.ConstURL.GOOGLE_YOUTUBE_API_KEY;
 
 
@@ -61,6 +65,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
     private EndlessRecyclerViewScrollListener scrollListener;
     private String pageToken;
     private ArrayList<YoutubeDataModel> mListData;
+    private ImageButton img_bookmark;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,6 +102,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
         collapsingToolbar.setTitle(youtubeDataModel.getTitle());
 
         mList_videos = (RecyclerView) findViewById(R.id.scrollableview);
+        img_bookmark = findViewById(R.id.img_bookmark);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         mList_videos.setLayoutManager(linearLayoutManager );
         mList_videos.setHasFixedSize(true);
@@ -106,7 +112,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                 .load(youtubeDataModel.getThumbnail())
                 .into(imageViewProfile);
 
-        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet&order=date&channelId=" +
+        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&order=date&channelId=" +
                 youtubeDataModel.getChannel_id() + "&maxResults=10&key=" + GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
         CHANNEL_Banner_GET_URL = "https://www.googleapis.com/youtube/v3/channels?part=brandingSettings&id=" + youtubeDataModel.getChannel_id() + "&key=" + GOOGLE_YOUTUBE_API_KEY;
         getChannelListFromServer(CHANNEL_GET_URL);
@@ -146,11 +152,25 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
             }
         };
         mList_videos.addOnScrollListener(scrollListener);
+        img_bookmark.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Add sample post to the database
+//                System.out.println("youtubeDataModel.getVideo_id()%%%%% = " + youtubeDataModel.getChannel_id());
 
+                if(PostsDatabaseHelper.getInstance(view.getContext()).addPost(youtubeDataModel,CHANNEL_TYPE)){
+                    Toast.makeText(getApplicationContext(),"Channel is Bookmarked successfully",Toast.LENGTH_SHORT).show();
+                }else {
+                    Toast.makeText(getApplicationContext(),"Channel is already Bookmarked",Toast.LENGTH_SHORT).show();
+
+                }
+            }
+        });
     }
     private void nextPageToken(String pageToken) {
-        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?pageToken=" + pageToken + "&part=snippet&" +
-                "maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&type=videos&order=viewCount&part=contentDetails";
+        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?channelId=" +
+        youtubeDataModel.getChannel_id()+"&pageToken=" + pageToken + "&part=snippet&" +
+                "maxResults=10&order=date&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&chart=mostPopular&type=videos&order=date&part=contentDetails";
         getEndlessListFromServer(CHANNEL_GET_URL);
 
     }

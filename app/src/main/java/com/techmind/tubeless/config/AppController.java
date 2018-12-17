@@ -8,6 +8,8 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.Volley;
+import com.facebook.stetho.Stetho;
+import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 
 
 public class AppController extends Application {
@@ -17,6 +19,7 @@ public class AppController extends Application {
     private static AppController mInstance;
     private RequestQueue mRequestQueue;
     private ImageLoader mImageLoader;
+    private PostsDatabaseHelper databaseHelper;
 
     public static synchronized AppController getInstance() {
         return mInstance;
@@ -26,7 +29,10 @@ public class AppController extends Application {
     public void onCreate() {
         super.onCreate();
         mInstance = this;
+        Stetho.initializeWithDefaults(this);
 //        clog = CLogger.initLoggerInstance(AppController.this);
+        // Get singleton instance of database
+         databaseHelper = PostsDatabaseHelper.getInstance(this);
     }
 
     public RequestQueue getRequestQueue() {

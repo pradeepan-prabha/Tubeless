@@ -102,7 +102,7 @@ public class SearchActivity extends AppCompatActivity {
             public boolean onQueryTextSubmit(String query) {
                 //setting progress message so that users can understand what is happening
                 mProgressDialog.setMessage("Finding videos for " + query.trim());
-                search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + query + "&type=" + search_type + "&maxResults=10&key="
+                search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&order=viewCount&q=" + query + "&type=channel" + search_type + "&maxResults=10&key="
                         + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
                 if (!query.isEmpty() && search_type != null) {
                     mProgressDialog.show();
@@ -151,7 +151,7 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private ArrayList<YoutubeDataModel> nextPageToken(String pageToken) {
-        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?pageToken=" + pageToken +"&type=" + search_type + "&part=snippet"+
+        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&order=viewCount&pageToken=" + pageToken +"&type=channel" + search_type +
                 "&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
         return getEndlessListFromServer(CHANNEL_GET_URL);
 

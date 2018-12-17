@@ -31,6 +31,17 @@
                 android:fitsSystemWindows="true"
                 android:scaleType="centerCrop"
                 app:layout_collapseMode="parallax"/>
+            <ImageButton
+                android:id="@+id/img_bookmark"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="bottom|right"
+                android:layout_margin="10dp"
+                android:padding="5dp"
+                android:background="@color/colorTextPrimary"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_bookmarks_outline"
+                android:visibility="visible" />
 
             <View
                 android:layout_width="match_parent"

@@ -4,6 +4,9 @@ public class ConstURL {
     public final static String GOOGLE_YOUTUBE_API_KEY = "AIzaSyACgDfexg1uu-HzrpJhlZhidbQeBSs0gRY";
     //    public final static String PLAYLIST_ID = "PL7u4lWXQ3wfI_7PgX0C-VTiwLeu0S4v34";//unbox therapy
     public final static String PLAYLIST_ID = "PLeEP84ImH_Lse3Ij9oppjtpex3zSLXhk6";//Madan Gowri
+    public final static String CHANNEL_TYPE = "channel";
+    public final static String VIDEOS_TYPE= "videos";
+    public final static String PLAYLIST_TYPE= "playlist";
 
     public static String CHANNEL_ID = "UCsTcErHg8oDvUnTzoqsYeNw";//unbox therapy
     //    public static String CHANNEL_ID = "UCoMdktPbSTixAyNGwb-UYkQ";

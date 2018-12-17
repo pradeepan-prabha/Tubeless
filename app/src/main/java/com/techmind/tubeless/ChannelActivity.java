@@ -6,9 +6,12 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 import com.techmind.tubeless.adapters.VideoPostAdapter;
 import com.techmind.tubeless.config.AppController;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
@@ -28,7 +31,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.techmind.tubeless.config.ConstURL.CHANNEL_TYPE;
 import static com.techmind.tubeless.config.ConstURL.GOOGLE_YOUTUBE_API_KEY;
+import static com.techmind.tubeless.config.ConstURL.VIDEOS_TYPE;
 
 public class ChannelActivity extends AppCompatActivity {
     private YoutubeDataModel youtubeDataModel = null;
@@ -40,13 +45,14 @@ public class ChannelActivity extends AppCompatActivity {
     private String CHANNEL_GET_URL;
     private String CHANNEL_Banner_GET_URL;
     private ImageView imageViewBanner;
-
+    private ImageButton img_bookmark;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_channel_activity);
         youtubeDataModel = getIntent().getParcelableExtra(YoutubeDataModel.class.toString());
         mList_videos = (RecyclerView) findViewById(R.id.mList_videos);
+
         ImageView imageViewProfile=findViewById(R.id.imageViewProfile);
         imageViewBanner=findViewById(R.id.imageViewBanner);
         Picasso.get()
@@ -58,6 +64,8 @@ public class ChannelActivity extends AppCompatActivity {
         CHANNEL_Banner_GET_URL = "https://www.googleapis.com/youtube/v3/channels?part=brandingSettings&id=" + youtubeDataModel.getChannel_id() + "&key=" + GOOGLE_YOUTUBE_API_KEY;
         getChannelListFromServer(CHANNEL_Banner_GET_URL);
         getBannerChannelListFromServer(CHANNEL_GET_URL);
+
+
     }
 
     public ArrayList<YoutubeDataModel> parseVideoListFromResponse(JSONObject jsonObject) {

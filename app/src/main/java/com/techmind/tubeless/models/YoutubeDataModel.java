@@ -18,11 +18,23 @@ public class YoutubeDataModel implements Parcelable {
         return kind;
     }
 
+    private String channel_id= "";
+
+    public String getPlayList_id() {
+        return playList_id;
+    }
+
+    public void setPlayList_id(String playList_id) {
+        this.playList_id = playList_id;
+    }
+
+    private String playList_id= "";
+
     public void setKind(String kind) {
         this.kind = kind;
     }
-
     private String kind = "";
+
 
     public String getChannel_id() {
         return channel_id;
@@ -35,8 +47,6 @@ public class YoutubeDataModel implements Parcelable {
     public static Creator<YoutubeDataModel> getCREATOR() {
         return CREATOR;
     }
-
-    private String channel_id= "";
 
     public String getVideo_id() {
         return video_id;

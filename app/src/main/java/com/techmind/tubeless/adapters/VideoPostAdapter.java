@@ -58,9 +58,6 @@ public class VideoPostAdapter extends RecyclerView.Adapter<VideoPostAdapter.Yout
 
         //TODO: image will be downloaded from url
         Picasso.get().load(object.getThumbnail()).into(ImageThumb);
-
-
-
     }
 
     @Override
