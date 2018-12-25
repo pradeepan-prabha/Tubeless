@@ -3,6 +3,7 @@ package com.techmind.tubeless.config;
 
 import android.app.Application;
 import android.text.TextUtils;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -34,7 +35,10 @@ public class AppController extends Application {
         // Get singleton instance of database
          databaseHelper = PostsDatabaseHelper.getInstance(this);
     }
-
+    public static void showToast(String data) {
+        Toast.makeText(mInstance, data,
+                Toast.LENGTH_SHORT).show();
+    }
     public RequestQueue getRequestQueue() {
         if (mRequestQueue == null) {
             mRequestQueue = Volley.newRequestQueue(getApplicationContext());

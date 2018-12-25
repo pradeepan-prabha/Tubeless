@@ -13,23 +13,24 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.SearchView;
 import android.widget.Toast;
 
-import com.techmind.tubeless.adapters.VideoPostAdapter;
-import com.techmind.tubeless.config.AppController;
-import com.techmind.tubeless.config.ConstURL;
-import com.techmind.tubeless.interfaces.OnItemClickListener;
-import com.techmind.tubeless.models.YoutubeDataModel;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.techmind.tubeless.adapters.MultiViewAdapter;
+import com.techmind.tubeless.config.AppController;
+import com.techmind.tubeless.config.ConstURL;
+import com.techmind.tubeless.interfaces.OnItemClickListener;
+import com.techmind.tubeless.models.YoutubeDataModel;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,7 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SearchActivity extends AppCompatActivity {
+public class SearchActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
 
     private Toolbar mToolbar;
     FrameLayout mContentFrame;
@@ -55,7 +56,7 @@ public class SearchActivity extends AppCompatActivity {
     //int the array list has id, title, description and thumbnail url
     private List<YoutubeDataModel> searchResults;
     private RecyclerView mList_videos = null;
-    private VideoPostAdapter adapter = null;
+    private MultiViewAdapter adapter = null;
     private String pageToken;
     private ArrayList<YoutubeDataModel> mListData = new ArrayList<>();
     public static String CHANNEL_GET_URL;
@@ -65,6 +66,9 @@ public class SearchActivity extends AppCompatActivity {
     private String kind;
     private String channelId;
     private EndlessRecyclerViewScrollListener scrollListener;
+    private CheckBox searchAnyCB;
+    private String searchQuery;
+    private String queryStr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +81,14 @@ public class SearchActivity extends AppCompatActivity {
 
         layoutView = LayoutInflater.from(this).inflate(R.layout.fragment_live, mContentFrame, false);
         mList_videos = (RecyclerView) layoutView.findViewById(R.id.mList_videos);
+        searchAnyCB = layoutView.findViewById(R.id.searchAnyCB);
+        if (searchAnyCB.isChecked()) {
+            searchQuery = "any";
+        } else {
+            searchQuery = "channel";
+        }
+        searchAnyCB.setOnCheckedChangeListener(this);
+
         mList_videos.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         mList_videos.setLayoutManager(linearLayoutManager);
@@ -100,9 +112,10 @@ public class SearchActivity extends AppCompatActivity {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
+                 queryStr=query;
                 //setting progress message so that users can understand what is happening
                 mProgressDialog.setMessage("Finding videos for " + query.trim());
-                search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&order=viewCount&q=" + query + "&type=channel" + search_type + "&maxResults=10&key="
+                search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + query + "&type=" + searchQuery + "&maxResults=10&key="
                         + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
                 if (!query.isEmpty() && search_type != null) {
                     mProgressDialog.show();
@@ -139,9 +152,9 @@ public class SearchActivity extends AppCompatActivity {
                 System.out.println("page =++++++++++++++++++++++++++++++++ " + page);
 //                ArrayList<YoutubeDataModel>nextPageTokenArrayList=nextPageToken(pageToken);
                 System.out.println("pageToken = " + pageToken);
-                if(pageToken!=null&&!pageToken.isEmpty()) {
+                if (pageToken != null && !pageToken.isEmpty()) {
                     nextPageToken(pageToken);
-                }else{
+                } else {
                     System.out.println("pageToken is size = " + page);
                 }
             }
@@ -151,7 +164,7 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private ArrayList<YoutubeDataModel> nextPageToken(String pageToken) {
-        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&order=viewCount&pageToken=" + pageToken +"&type=channel" + search_type +
+        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&q=" + queryStr +"&pageToken=" + pageToken + "&type=" + searchQuery +
                 "&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
         return getEndlessListFromServer(CHANNEL_GET_URL);
 
@@ -177,7 +190,7 @@ public class SearchActivity extends AppCompatActivity {
             @Override
             public void onErrorResponse(VolleyError error) {
                 if (mProgressDialog.isShowing())
-                Toast.makeText(SearchActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SearchActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
             }
         }) {
 
@@ -204,12 +217,12 @@ public class SearchActivity extends AppCompatActivity {
                             mProgressDialog.dismiss();
                         }
                         System.out.println("response Channel Api = " + response);
-                        ArrayList<YoutubeDataModel> nextTokenArrayList= new ArrayList<>();
+                        ArrayList<YoutubeDataModel> nextTokenArrayList = new ArrayList<>();
                         nextTokenArrayList = parseTrendingVideoListFromResponse(response);
 //                        initList(mListData);
-                        System.out.println("Size="+nextTokenArrayList.size()+"nextTokenArrayList ="+ nextTokenArrayList);
+                        System.out.println("Size=" + nextTokenArrayList.size() + "nextTokenArrayList =" + nextTokenArrayList);
                         mListData.addAll(nextTokenArrayList);
-                        System.out.println("Size="+mListData.size()+"mListData = " + mListData);
+                        System.out.println("Size=" + mListData.size() + "mListData = " + mListData);
                         adapter.notifyItemInserted(mListData.size());
                     }
 
@@ -237,7 +250,7 @@ public class SearchActivity extends AppCompatActivity {
 
     private void initList(ArrayList<YoutubeDataModel> mListData) {
 
-        adapter = new VideoPostAdapter(SearchActivity.this, mListData, mList_videos, new OnItemClickListener() {
+        adapter = new MultiViewAdapter(SearchActivity.this, mListData, mList_videos, new OnItemClickListener() {
             private Intent intent;
 
             @Override
@@ -247,11 +260,13 @@ public class SearchActivity extends AppCompatActivity {
 //                    &&requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.channelKey))
                     intent = new Intent(SearchActivity.this, ChannelPlaylistActivity.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                    intent.putExtra("activity", "SearchActivity");
                     startActivity(intent);
 //                    requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.videoKey))
                 } else if (youtubeDataModel.getKind().equalsIgnoreCase("youtube#video")) {
                     intent = new Intent(SearchActivity.this, VideoPlayerActivity.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                    intent.putExtra("activity", "SearchActivity");
                     startActivity(intent);
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
@@ -313,13 +328,15 @@ public class SearchActivity extends AppCompatActivity {
                             System.out.println("description = " + description);
                             String publishedAt = jsonSnippet.getString("publishedAt");
                             System.out.println("publishedAt = " + publishedAt);
-                            String thumbnail = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
-                            System.out.println("thumbnail = " + thumbnail);
-
+                            String thumbnailHigh = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
+                            String thumbnailMedium = jsonSnippet.getJSONObject("thumbnails").getJSONObject("medium").getString("url");
+                            String thumbnailDefault = jsonSnippet.getJSONObject("thumbnails").getJSONObject("default").getString("url");
                             youtubeObject.setTitle(title);
                             youtubeObject.setDescription(description);
                             youtubeObject.setPublishedAt(publishedAt);
-                            youtubeObject.setThumbnail(thumbnail);
+                            youtubeObject.setThumbnailHigh(thumbnailHigh);
+                            youtubeObject.setThumbnailMedium(thumbnailMedium);
+                            youtubeObject.setThumbnailDefault(thumbnailDefault);
                             youtubeObject.setChannel_id(channelId);
                             youtubeObject.setKind(kind);
                             youtubeObject.setVideo_id(video_id);
@@ -335,22 +352,6 @@ public class SearchActivity extends AppCompatActivity {
         }
 
         return mList;
-
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle item selection
-        switch (item.getItemId()) {
-            case R.id.action_video:
-                search_type = "videos";
-                return true;
-            case R.id.action_channel:
-                search_type = "channel";
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
     }
 
     private void setUpToolbar() {
@@ -383,4 +384,16 @@ public class SearchActivity extends AppCompatActivity {
         finish();
     }
 
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean checkSearch) {
+        switch (compoundButton.getId()) {
+            case R.id.searchAnyCB:
+                if (checkSearch) {
+                    searchQuery = "any";
+                } else {
+                    searchQuery = "channel";
+                }
+                break;
+        }
+    }
 }

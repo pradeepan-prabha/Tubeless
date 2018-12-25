@@ -11,7 +11,26 @@ public class YoutubeDataModel implements Parcelable {
     private String title = "";
     private String description = "";
     private String publishedAt = "";
-    private String thumbnail = "";
+    private String ThumbnailHigh = "";
+    private String ThumbnailMedium = "";
+
+    public String getThumbnailMedium() {
+        return ThumbnailMedium;
+    }
+
+    public void setThumbnailMedium(String thumbnailMedium) {
+        ThumbnailMedium = thumbnailMedium;
+    }
+
+    public String getThumbnailDefault() {
+        return ThumbnailDefault;
+    }
+
+    public void setThumbnailDefault(String thumbnailDefault) {
+        ThumbnailDefault = thumbnailDefault;
+    }
+
+    private String ThumbnailDefault = "";
     private String video_id = "";
 
     public String getKind() {
@@ -80,12 +99,12 @@ public class YoutubeDataModel implements Parcelable {
         this.publishedAt = publishedAt;
     }
 
-    public String getThumbnail() {
-        return thumbnail;
+    public String getThumbnailHigh() {
+        return ThumbnailHigh;
     }
 
-    public void setThumbnail(String thumbnail) {
-        this.thumbnail = thumbnail;
+    public void setThumbnailHigh(String ThumbnailHigh) {
+        this.ThumbnailHigh = ThumbnailHigh;
     }
 
     @Override
@@ -98,7 +117,9 @@ public class YoutubeDataModel implements Parcelable {
         dest.writeString(title);
         dest.writeString(description);
         dest.writeString(publishedAt);
-        dest.writeString(thumbnail);
+        dest.writeString(ThumbnailHigh);
+        dest.writeString(ThumbnailDefault);
+        dest.writeString(ThumbnailMedium);
         dest.writeString(video_id);
         dest.writeString(channel_id);
         dest.writeString(kind);
@@ -118,7 +139,9 @@ public class YoutubeDataModel implements Parcelable {
         this.title = in.readString();
         this.description = in.readString();
         this.publishedAt = in.readString();
-        this.thumbnail = in.readString();
+        this.ThumbnailHigh = in.readString();
+        this.ThumbnailMedium = in.readString();
+        this.ThumbnailDefault = in.readString();
         this.video_id = in.readString();
         this.channel_id = in.readString();
         this.kind = in.readString();

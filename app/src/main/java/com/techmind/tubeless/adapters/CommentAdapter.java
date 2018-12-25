@@ -38,17 +38,17 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.YoutubeC
 
     @Override
     public void onBindViewHolder(YoutubeCommentHolder holder, int position) {
-        TextView textViewName = holder.textViewName;
+        TextView detail_video_title_view = holder.detail_video_title_view;
         TextView feedback = holder.feedback;
         ImageView imageView = holder.imageViewIcon;
         YoutubeCommentModel object = dataSet.get(position);
-        textViewName.setText(object.getTitle());
+        detail_video_title_view.setText(object.getTitle());
         feedback.setText(object.getComment());
         try {
-            if (object.getThumbnail() != null) {
-                if (object.getThumbnail().startsWith("http")) {
+            if (object.getThumbnailHigh() != null) {
+                if (object.getThumbnailHigh().startsWith("http")) {
                     Picasso.get()
-                            .load(object.getThumbnail())
+                            .load(object.getThumbnailHigh())
                             .into(imageView);
                 }
             }
@@ -64,13 +64,13 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.YoutubeC
 
     public static class YoutubeCommentHolder extends RecyclerView.ViewHolder {
 
-        TextView textViewName;
+        TextView detail_video_title_view;
         TextView feedback;
         ImageView imageViewIcon;
 
         public YoutubeCommentHolder(View itemView) {
             super(itemView);
-            this.textViewName = (TextView) itemView.findViewById(R.id.textViewName);
+            this.detail_video_title_view = (TextView) itemView.findViewById(R.id.detail_video_title_view);
             this.imageViewIcon = (ImageView) itemView.findViewById(R.id.profile_image);
             this.feedback = (TextView) itemView.findViewById(R.id.feedback);
 

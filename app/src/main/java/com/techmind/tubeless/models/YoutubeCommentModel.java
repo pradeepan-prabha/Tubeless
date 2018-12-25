@@ -47,11 +47,11 @@ public class YoutubeCommentModel implements Parcelable {
         this.publishedAt = publishedAt;
     }
 
-    public String getThumbnail() {
+    public String getThumbnailHigh() {
         return thumbnail;
     }
 
-    public void setThumbnail(String thumbnail) {
+    public void setThumbnailHigh(String thumbnail) {
         this.thumbnail = thumbnail;
     }
 

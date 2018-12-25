@@ -20,18 +20,18 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
-import com.techmind.tubeless.adapters.VideoPostAdapter;
-import com.techmind.tubeless.config.AppController;
-import com.techmind.tubeless.config.ConstURL;
-import com.techmind.tubeless.interfaces.OnItemClickListener;
-import com.techmind.tubeless.models.YoutubeDataModel;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.squareup.picasso.Picasso;
+import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
+import com.techmind.tubeless.adapters.VideoPostAdapter;
+import com.techmind.tubeless.config.AppController;
+import com.techmind.tubeless.config.ConstURL;
+import com.techmind.tubeless.interfaces.OnItemClickListener;
+import com.techmind.tubeless.models.YoutubeDataModel;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,6 +43,7 @@ import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
+import static com.techmind.tubeless.config.AppController.showToast;
 import static com.techmind.tubeless.config.ConstURL.CHANNEL_TYPE;
 import static com.techmind.tubeless.config.ConstURL.GOOGLE_YOUTUBE_API_KEY;
 
@@ -66,6 +67,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
     private String pageToken;
     private ArrayList<YoutubeDataModel> mListData;
     private ImageButton img_bookmark;
+    private boolean bookmarkedId = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,13 +106,16 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
         mList_videos = (RecyclerView) findViewById(R.id.scrollableview);
         img_bookmark = findViewById(R.id.img_bookmark);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
-        mList_videos.setLayoutManager(linearLayoutManager );
+        mList_videos.setLayoutManager(linearLayoutManager);
         mList_videos.setHasFixedSize(true);
-        CircleImageView imageViewProfile=findViewById(R.id.imageViewProfile);
-        imageViewBanner=findViewById(R.id.header);
+        CircleImageView imageViewProfile = findViewById(R.id.imageViewProfile);
+        imageViewBanner = findViewById(R.id.header);
         Picasso.get()
-                .load(youtubeDataModel.getThumbnail())
+                .load(youtubeDataModel.getThumbnailHigh())
                 .into(imageViewProfile);
+
+        checkBookmarkTag();
+
 
         CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&order=date&channelId=" +
                 youtubeDataModel.getChannel_id() + "&maxResults=10&key=" + GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
@@ -134,7 +139,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
             }
         });
         // Adds the scroll listener to RecyclerView
-        scrollListener = new EndlessRecyclerViewScrollListener(linearLayoutManager ) {
+        scrollListener = new EndlessRecyclerViewScrollListener(linearLayoutManager) {
             @Override
             public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
                 // Triggered only when new data needs to be appended to the list
@@ -142,11 +147,10 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
 //                loadNextDataFromApi(page);
                 System.out.println("totalItemsCount ++++++++++++= " + totalItemsCount);
                 System.out.println("page =++++++++++++++++++++++++++++++++ " + page);
-                if(pageToken!=null&&!pageToken.isEmpty())
-                {
+                if (pageToken != null && !pageToken.isEmpty()) {
                     System.out.println("pageToken = " + pageToken);
-                nextPageToken(pageToken);
-                }else{
+                    nextPageToken(pageToken);
+                } else {
                     System.out.println("pageToken is size = " + page);
                 }
             }
@@ -157,23 +161,41 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
             public void onClick(View view) {
                 // Add sample post to the database
 //                System.out.println("youtubeDataModel.getVideo_id()%%%%% = " + youtubeDataModel.getChannel_id());
-
-                if(PostsDatabaseHelper.getInstance(view.getContext()).addPost(youtubeDataModel,CHANNEL_TYPE)){
-                    Toast.makeText(getApplicationContext(),"Channel is Bookmarked successfully",Toast.LENGTH_SHORT).show();
-                }else {
-                    Toast.makeText(getApplicationContext(),"Channel is already Bookmarked",Toast.LENGTH_SHORT).show();
-
+                if (!bookmarkedId) {
+                    if (PostsDatabaseHelper.getInstance(view.getContext()).addPost(youtubeDataModel, CHANNEL_TYPE)) {
+                        showToast("Channel is Bookmarked successfully");
+                        checkBookmarkTag();
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Unable to Bookmark", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    if (PostsDatabaseHelper.getInstance(view.getContext()).deleteId(youtubeDataModel.getChannel_id())) {
+                        showToast("Channel bookmarked is removed successfully");
+                        checkBookmarkTag();
+                    }
                 }
             }
         });
     }
+
+    private void checkBookmarkTag() {
+        if (PostsDatabaseHelper.getInstance(getApplicationContext()).checkTypeIdExistsOrNot(youtubeDataModel.getChannel_id()) == -1) {
+            img_bookmark.setImageResource(R.drawable.ic_bookmarks_outline);
+            bookmarkedId = false;
+        } else {
+            img_bookmark.setImageResource(R.drawable.ic_bookmarks_color);
+            bookmarkedId = true;
+        }
+    }
+
     private void nextPageToken(String pageToken) {
         CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?channelId=" +
-        youtubeDataModel.getChannel_id()+"&pageToken=" + pageToken + "&part=snippet&" +
+                youtubeDataModel.getChannel_id() + "&pageToken=" + pageToken + "&part=snippet&" +
                 "maxResults=10&order=date&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&chart=mostPopular&type=videos&order=date&part=contentDetails";
         getEndlessListFromServer(CHANNEL_GET_URL);
 
     }
+
     public ArrayList<YoutubeDataModel> parseVideoListFromResponse(JSONObject jsonObject) {
         ArrayList<YoutubeDataModel> mList = new ArrayList<>();
         if (jsonObject.has("items")) {
@@ -185,7 +207,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                 JSONArray jsonArray = jsonObject.getJSONArray("items");
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject json = jsonArray.getJSONObject(i);
-                    System.out.println("json"+i+" = " + json);
+                    System.out.println("json" + i + " = " + json);
                     if (json.has("id")) {
                         JSONObject jsonID = json.getJSONObject("id");
                         String video_id = "";
@@ -204,7 +226,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                                 youtubeObject.setTitle(title);
                                 youtubeObject.setDescription(description);
                                 youtubeObject.setPublishedAt(publishedAt);
-                                youtubeObject.setThumbnail(thumbnail);
+                                youtubeObject.setThumbnailHigh(thumbnail);
                                 youtubeObject.setVideo_id(video_id);
                                 mList.add(youtubeObject);
 
@@ -232,8 +254,8 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         System.out.println(" getChannelListFromServerResponse = " + response);
 
-                            mListData = parseVideoListFromResponse(response);
-                            initList(mListData);
+                        mListData = parseVideoListFromResponse(response);
+                        initList(mListData);
                     }
 
                 }, new Response.ErrorListener() {
@@ -256,7 +278,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
     }
 
     private void getBannerChannelListFromServer(String url) {
-       mListData = new ArrayList<>();
+        mListData = new ArrayList<>();
 
         System.out.println("getBannerChannelListFromServer*************= " + url);
         //Retrieving response from the server
@@ -265,20 +287,20 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                        System.out.println("getBannerChannelListFromServerResponse = " + response);
-                        JSONObject thumbnailArray = (JSONObject) response.getJSONArray("items").get(0);
-                        if (thumbnailArray.has("brandingSettings")) {
-                            String thumbnail = thumbnailArray.getJSONObject("brandingSettings").getJSONObject("image").getString("bannerMobileExtraHdImageUrl");
+                            System.out.println("getBannerChannelListFromServerResponse = " + response);
+                            JSONObject thumbnailArray = (JSONObject) response.getJSONArray("items").get(0);
+                            if (thumbnailArray.has("brandingSettings")) {
+                                String thumbnail = thumbnailArray.getJSONObject("brandingSettings").getJSONObject("image").getString("bannerMobileExtraHdImageUrl");
 
 //                            String thumbnail = response.getJSONObject("items");
-                            Picasso.get()
-                                    .load(thumbnail)
-                                    .into(imageViewBanner);
-                            System.out.println("thumbnail = " + thumbnail);
+                                Picasso.get()
+                                        .load(thumbnail)
+                                        .into(imageViewBanner);
+                                System.out.println("thumbnail = " + thumbnail);
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
 
                     }
 
@@ -310,12 +332,12 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         System.out.println("response Channel Api = " + response);
-                        ArrayList<YoutubeDataModel> nextTokenArrayList= new ArrayList<>();
+                        ArrayList<YoutubeDataModel> nextTokenArrayList = new ArrayList<>();
                         nextTokenArrayList = parseVideoListFromResponse(response);
 //                        initList(mListData);
-                        System.out.println("nextTokenArrayList = " + nextTokenArrayList+"       Size="+nextTokenArrayList.size());
+                        System.out.println("nextTokenArrayList = " + nextTokenArrayList + "       Size=" + nextTokenArrayList.size());
                         mListData.addAll(nextTokenArrayList);
-                        System.out.println("mListData = " +mListData.size()+"       Size="+ mListData);
+                        System.out.println("mListData = " + mListData.size() + "       Size=" + mListData);
                         adapter.notifyItemInserted(mListData.size());
                     }
 
@@ -339,12 +361,13 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
     }
 
     private void initList(ArrayList<YoutubeDataModel> mListData) {
-        adapter = new VideoPostAdapter(this, mListData,mList_videos, new OnItemClickListener() {
+        adapter = new VideoPostAdapter(this, mListData, mList_videos, new OnItemClickListener() {
             @Override
             public void onItemClick(YoutubeDataModel item) {
                 YoutubeDataModel youtubeDataModel = item;
                 Intent intent = new Intent(ChannelPlaylistActivity.this, VideoPlayerActivity.class);
                 intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                intent.putExtra("activity","ChannelPlaylistActivity");
                 startActivity(intent);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
                     overridePendingTransition(R.animator.right_in, R.animator.left_out);
@@ -354,6 +377,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
         mList_videos.setAdapter(adapter);
 //        mList_videos.smoothScrollToPosition(previousListPosition);
     }
+
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         if (collapsedMenu != null
@@ -380,6 +404,9 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+                    this.overridePendingTransition(R.animator.left_to_right, R.animator.right_to_left);
+                }
                 return true;
             case R.id.action_settings:
                 return true;
@@ -389,5 +416,13 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+    @Override
+    public void onBackPressed() {
+        finish();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+            this.overridePendingTransition(R.animator.left_to_right, R.animator.right_to_left);
+        }
+        super.onBackPressed();
     }
 }

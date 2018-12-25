@@ -106,7 +106,7 @@ public class Demo1Fragment extends Fragment {
                                 youtubeObject.setTitle(title);
                                 youtubeObject.setDescription(description);
                                 youtubeObject.setPublishedAt(publishedAt);
-                                youtubeObject.setThumbnail(thumbnail);
+                                youtubeObject.setThumbnailHigh(thumbnail);
                                 youtubeObject.setVideo_id(video_id);
                                 mList.add(youtubeObject);
 

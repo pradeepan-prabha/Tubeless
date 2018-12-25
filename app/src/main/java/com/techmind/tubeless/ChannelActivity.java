@@ -56,7 +56,7 @@ public class ChannelActivity extends AppCompatActivity {
         ImageView imageViewProfile=findViewById(R.id.imageViewProfile);
         imageViewBanner=findViewById(R.id.imageViewBanner);
         Picasso.get()
-                .load(youtubeDataModel.getThumbnail())
+                .load(youtubeDataModel.getThumbnailHigh())
                 .into(imageViewProfile);
 
         CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet&order=date&channelId=" +
@@ -93,7 +93,7 @@ public class ChannelActivity extends AppCompatActivity {
                                 youtubeObject.setTitle(title);
                                 youtubeObject.setDescription(description);
                                 youtubeObject.setPublishedAt(publishedAt);
-                                youtubeObject.setThumbnail(thumbnail);
+                                youtubeObject.setThumbnailHigh(thumbnail);
                                 youtubeObject.setVideo_id(video_id);
                                 mList.add(youtubeObject);
 
@@ -196,6 +196,7 @@ public class ChannelActivity extends AppCompatActivity {
                 YoutubeDataModel youtubeDataModel = item;
                 Intent intent = new Intent(ChannelActivity.this, VideoPlayerActivity.class);
                 intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+
                 startActivity(intent);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
                     overridePendingTransition(R.animator.right_in, R.animator.left_out);

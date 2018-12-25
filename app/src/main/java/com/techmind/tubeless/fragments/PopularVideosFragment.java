@@ -275,7 +275,7 @@ public class PopularVideosFragment extends Fragment {
                                 youtubeObject.setTitle(title);
                                 youtubeObject.setDescription(description);
                                 youtubeObject.setPublishedAt(publishedAt);
-                                youtubeObject.setThumbnail(thumbnail);
+                                youtubeObject.setThumbnailHigh(thumbnail);
                                 youtubeObject.setVideo_id(video_id);
                                 mList.add(youtubeObject);
 
@@ -344,7 +344,7 @@ public class PopularVideosFragment extends Fragment {
                             youtubeObject.setTitle(title);
                             youtubeObject.setDescription(description);
                             youtubeObject.setPublishedAt(publishedAt);
-                            youtubeObject.setThumbnail(thumbnail);
+                            youtubeObject.setThumbnailHigh(thumbnail);
                             youtubeObject.setChannel_id(channelId);
                             youtubeObject.setKind(kind);
                             youtubeObject.setVideo_id(video_id);
@@ -400,7 +400,7 @@ public class PopularVideosFragment extends Fragment {
                                 youtubeObject.setTitle(title);
                                 youtubeObject.setDescription(description);
                                 youtubeObject.setPublishedAt(publishedAt);
-                                youtubeObject.setThumbnail(thumbnail);
+                                youtubeObject.setThumbnailHigh(thumbnail);
                                 youtubeObject.setKind(json.getString("kind"));
                                 youtubeObject.setVideo_id(video_id);
                                 mList.add(youtubeObject);
@@ -555,7 +555,7 @@ public class PopularVideosFragment extends Fragment {
                             youtubeObject.setTitle(title);
                             youtubeObject.setDescription(description);
                             youtubeObject.setPublishedAt(publishedAt);
-                            youtubeObject.setThumbnail(thumbnail);
+                            youtubeObject.setThumbnailHigh(thumbnail);
                             youtubeObject.setChannel_id(channelId);
                             youtubeObject.setKind(kind);
                             youtubeObject.setVideo_id(video_id);

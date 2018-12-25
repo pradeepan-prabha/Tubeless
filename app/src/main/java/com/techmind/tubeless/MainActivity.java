@@ -33,7 +33,8 @@ import static com.techmind.tubeless.config.ConstURL.PLAYLIST_TYPE;
 import static com.techmind.tubeless.config.ConstURL.VIDEOS_TYPE;
 
 public class MainActivity extends AppCompatActivity {
-
+    private static final String TAG = "MainActivity";
+    public static final boolean DEBUG = !BuildConfig.BUILD_TYPE.equals("release");
     private Toolbar mToolbar;
     private DrawerLayout mDrawerLayout;
     NavigationView mNavigationView;
@@ -127,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
         for (YoutubeDataModel youtubeDataModelsIndex : youtubeDataModelsList) {
         }
         initList((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
-        if (mSwipeRefreshLayout!=null&&mSwipeRefreshLayout.isRefreshing()) {
+        if (mSwipeRefreshLayout != null && mSwipeRefreshLayout.isRefreshing()) {
             mSwipeRefreshLayout.setRefreshing(false);
         }
     }
@@ -143,14 +144,17 @@ public class MainActivity extends AppCompatActivity {
                 if (youtubeDataModel.getKind().equals(CHANNEL_TYPE)) {
                     intent = new Intent(MainActivity.this, ChannelPlaylistActivity.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                    intent.putExtra("activity", "MainActivity");
                     startActivity(intent);
                 } else if (youtubeDataModel.getKind().equals(VIDEOS_TYPE)) {
                     intent = new Intent(MainActivity.this, VideoPlayerActivity.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                    intent.putExtra("activity", "MainActivity");
                     startActivity(intent);
                 } else if (youtubeDataModel.getKind().equals(PLAYLIST_TYPE)) {
                     intent = new Intent(MainActivity.this, VideoPlayerActivity.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                    intent.putExtra("activity", "MainActivity");
                     startActivity(intent);
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {

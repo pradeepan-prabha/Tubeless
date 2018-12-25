@@ -100,11 +100,11 @@ public class EndlessDataAdapter extends RecyclerView.Adapter {
 
             ((StudentViewHolder) holder).textViewTitle.setText(youtubeDataModel.getTitle());
 
-            ((StudentViewHolder) holder).textViewDes.setText(youtubeDataModel.getDescription());
+            ((StudentViewHolder) holder).detail_description_view.setText(youtubeDataModel.getDescription());
 //            holder.bind(dataSet.get(position), listener);
 
             //TODO: image will be downloaded from url
-            Picasso.get().load(youtubeDataModel.getThumbnail()).into(((StudentViewHolder) holder).ImageThumb);
+            Picasso.get().load(youtubeDataModel.getThumbnailHigh()).into(((StudentViewHolder) holder).ImageThumb);
 
         } else {
             ((ProgressViewHolder) holder).progressBar.setIndeterminate(true);
@@ -128,15 +128,15 @@ public class EndlessDataAdapter extends RecyclerView.Adapter {
     //
     public class StudentViewHolder extends RecyclerView.ViewHolder {
         TextView textViewTitle;
-        TextView textViewDes;
-        TextView textViewDate;
+        TextView detail_description_view;
+        TextView detail_upload_date_view;
         ImageView ImageThumb;
 
         public StudentViewHolder(View v) {
             super(v);
             this.textViewTitle = (TextView) itemView.findViewById(R.id.textViewTitle);
-            this.textViewDes = (TextView) itemView.findViewById(R.id.textViewDes);
-//            this.textViewDate = (TextView) itemView.findViewById(R.id.textViewDate);
+            this.detail_description_view = (TextView) itemView.findViewById(R.id.detail_description_view);
+//            this.detail_upload_date_view = (TextView) itemView.findViewById(R.id.detail_upload_date_view);
             this.ImageThumb = (ImageView) itemView.findViewById(R.id.ImageThumb);
 
             v.setOnClickListener(new View.OnClickListener() {
