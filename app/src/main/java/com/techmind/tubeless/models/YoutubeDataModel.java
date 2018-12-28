@@ -12,7 +12,107 @@ public class YoutubeDataModel implements Parcelable {
     private String description = "";
     private String publishedAt = "";
     private String ThumbnailHigh = "";
+    private String kind = "";
     private String ThumbnailMedium = "";
+    private String playList_id = "";
+    private String channelTitle = "";
+    private String ThumbnailDefault = "";
+    private String video_id = "";
+    private String channel_id = "";
+    private String viewCount = "";
+    private String likeCount = "";
+    private String dislikeCount = "";
+    private String favoriteCount = "";
+    private String commentCount = "";
+    private String subscriberCount = "";
+    private String videoCount = "";
+
+    public String getDuration() {
+        return duration;
+    }
+
+    public void setDuration(String duration) {
+        this.duration = duration;
+    }
+
+    private String duration = "";
+
+    public String getPlayListCount() {
+        return playListCount;
+    }
+
+    public void setPlayListCount(String playListCount) {
+        this.playListCount = playListCount;
+    }
+
+    private String playListCount = "";
+
+
+    public String getViewCount() {
+        return viewCount;
+    }
+
+    public void setViewCount(String viewCount) {
+        this.viewCount = viewCount;
+    }
+
+    public String getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(String likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public String getDislikeCount() {
+        return dislikeCount;
+    }
+
+    public void setDislikeCount(String dislikeCount) {
+        this.dislikeCount = dislikeCount;
+    }
+
+    public String getFavoriteCount() {
+        return favoriteCount;
+    }
+
+    public void setFavoriteCount(String favoriteCount) {
+        this.favoriteCount = favoriteCount;
+    }
+
+    public String getCommentCount() {
+        return commentCount;
+    }
+
+    public void setCommentCount(String commentCount) {
+        this.commentCount = commentCount;
+    }
+
+    public String getSubscriberCount() {
+        return subscriberCount;
+    }
+
+    public void setSubscriberCount(String subscriberCount) {
+        this.subscriberCount = subscriberCount;
+    }
+
+    public String getVideoCount() {
+        return videoCount;
+    }
+
+    public void setVideoCount(String videoCount) {
+        this.videoCount = videoCount;
+    }
+
+
+    public String getChannelTitle() {
+        return channelTitle;
+    }
+
+    public void setChannelTitle(String channelTitle) {
+        this.channelTitle = channelTitle;
+    }
+
 
     public String getThumbnailMedium() {
         return ThumbnailMedium;
@@ -30,14 +130,10 @@ public class YoutubeDataModel implements Parcelable {
         ThumbnailDefault = thumbnailDefault;
     }
 
-    private String ThumbnailDefault = "";
-    private String video_id = "";
-
     public String getKind() {
         return kind;
     }
 
-    private String channel_id= "";
 
     public String getPlayList_id() {
         return playList_id;
@@ -47,13 +143,9 @@ public class YoutubeDataModel implements Parcelable {
         this.playList_id = playList_id;
     }
 
-    private String playList_id= "";
-
     public void setKind(String kind) {
         this.kind = kind;
     }
-    private String kind = "";
-
 
     public String getChannel_id() {
         return channel_id;
@@ -123,6 +215,17 @@ public class YoutubeDataModel implements Parcelable {
         dest.writeString(video_id);
         dest.writeString(channel_id);
         dest.writeString(kind);
+        dest.writeString(playList_id);
+        dest.writeString(channelTitle);
+        dest.writeString(viewCount );
+        dest.writeString(likeCount );
+        dest.writeString(dislikeCount);
+        dest.writeString(favoriteCount);
+        dest.writeString(commentCount );
+        dest.writeString(subscriberCount);
+        dest.writeString(videoCount );
+        dest.writeString(playListCount );
+        dest.writeString(duration );
     }
 
     public YoutubeDataModel() {
@@ -145,6 +248,17 @@ public class YoutubeDataModel implements Parcelable {
         this.video_id = in.readString();
         this.channel_id = in.readString();
         this.kind = in.readString();
+        this.playList_id = in.readString();
+        this.channelTitle = in.readString();
+        this.viewCount = in.readString();
+        this.likeCount = in.readString();
+        this.dislikeCount = in.readString();
+        this.favoriteCount = in.readString();
+        this.commentCount = in.readString();
+        this.subscriberCount = in.readString();
+        this.videoCount = in.readString();
+        this.playListCount = in.readString();
+        this.duration = in.readString();
 
     }
 

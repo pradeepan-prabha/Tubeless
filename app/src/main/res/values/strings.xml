@@ -5,21 +5,13 @@
     <string name="action_search">Search</string>
     <string name="video">Videos</string>
     <string name="Channel">Channel</string>
+
     <style name="MyCheckbox" parent="@style/Widget.AppCompat.CompoundButton.CheckBox">
         <item name="colorControlNormal">@color/colorPrimary</item>
         <item name="colorControlActivated">@color/colorPrimary</item>
         <item name="colorControlHighlight">#dbf5fd</item>
         <item name="android:textAppearance">@style/TextAppearance.AppCompat</item>
     </style>
-
-
-
-
-
-
-
-
-
 
 
     <string name="main_bg_subtitle">Tap search to get started</string>

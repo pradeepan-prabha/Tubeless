@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.techmind.tubeless">
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -21,8 +22,10 @@
             </intent-filter>
         </activity>
         <activity android:name=".VideoPlayerActivity" />
-        <activity android:name=".ChannelActivity"></activity>
-        <activity android:name=".ChannelPlaylistActivity"></activity>
-        <activity android:name=".SearchActivity"></activity>
+        <activity android:name=".ChannelActivity" />
+        <activity android:name=".ChannelPlaylistActivity" />
+        <activity android:name=".SearchActivity" />
+        <activity android:name=".PlayListActivity"></activity>
     </application>
+
 </manifest>

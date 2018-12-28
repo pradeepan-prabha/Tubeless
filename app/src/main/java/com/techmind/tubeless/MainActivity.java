@@ -21,6 +21,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
+import com.techmind.tubeless.adapters.MultiViewAdapter;
 import com.techmind.tubeless.adapters.VideoPostAdapter;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
 import com.techmind.tubeless.models.YoutubeDataModel;
@@ -40,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     NavigationView mNavigationView;
     FrameLayout mContentFrame;
     private RecyclerView mList_videos = null;
-    private VideoPostAdapter adapter = null;
+    private MultiViewAdapter adapter = null;
     private static final String PREFERENCES_FILE = "mymaterialapp_settings";
     private static final String PREF_USER_LEARNED_DRAWER = "navigation_drawer_learned";
     private static final String STATE_SELECTED_POSITION = "selected_navigation_drawer_position";
@@ -125,8 +126,8 @@ public class MainActivity extends AppCompatActivity {
         } else {
             empty_view.setVisibility(View.VISIBLE);
         }
-        for (YoutubeDataModel youtubeDataModelsIndex : youtubeDataModelsList) {
-        }
+//        for (YoutubeDataModel youtubeDataModelsIndex : youtubeDataModelsList) {
+//        }
         initList((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
         if (mSwipeRefreshLayout != null && mSwipeRefreshLayout.isRefreshing()) {
             mSwipeRefreshLayout.setRefreshing(false);
@@ -135,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initList(ArrayList<YoutubeDataModel> mListData) {
         mList_videos.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new VideoPostAdapter(this, mListData, mList_videos, new OnItemClickListener() {
+        adapter = new MultiViewAdapter(this, mListData, mList_videos, new OnItemClickListener() {
             private Intent intent;
 
             @Override
@@ -152,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
                     intent.putExtra("activity", "MainActivity");
                     startActivity(intent);
                 } else if (youtubeDataModel.getKind().equals(PLAYLIST_TYPE)) {
-                    intent = new Intent(MainActivity.this, VideoPlayerActivity.class);
+                    intent = new Intent(MainActivity.this, PlayListActivity.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
                     intent.putExtra("activity", "MainActivity");
                     startActivity(intent);

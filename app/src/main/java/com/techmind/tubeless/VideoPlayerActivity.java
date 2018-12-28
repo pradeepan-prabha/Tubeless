@@ -86,7 +86,6 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     private String pageToken;
     private VideoPostAdapter adapter = null;
     ArrayList<YoutubeDataModel> mList = new ArrayList<>();
-    private String kind;
     private ImageButton img_bookmark;
     private boolean bookmarkedId = false;
     private ImageView videoTitleToggleArrow;
@@ -139,6 +138,42 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         }
 
     }
+
+    private void getVideoStatistics(String url) {
+        System.out.println("Get Video statistics*************= " + url);
+        //Retrieving response from the server
+        JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        System.out.println("response Channel Api = " + response);
+                        mListData = parseTrendingVideoStatistics(response);
+                        initList(mListData);
+
+                    }
+
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(getApplication(), "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+            }
+        }) {
+
+            //This is for Headers If You Needed
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "text/plain");
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(js, null);
+    }
+
+    private ArrayList<YoutubeDataModel> parseTrendingVideoStatistics(JSONObject response) {
+        return null;
+    }
+
     @Override
     public void onClick(View v) {
 
@@ -262,6 +297,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                     if (json.has("id")) {
                         String video_id = "";
                         JSONObject jsonObj = json.getJSONObject("id");
+                        String kind = "";
                         if (jsonObj.has("videoId")) {
                             video_id = jsonObj.getString("videoId");
                             kind = jsonObj.getString("kind");
@@ -276,14 +312,19 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                                 }
                                 String description = jsonSnippet.getString("description");
                                 String publishedAt = jsonSnippet.getString("publishedAt");
-                                String thumbnail = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
 
+                                String thumbnailHigh = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
+                                String thumbnailMedium = jsonSnippet.getJSONObject("thumbnails").getJSONObject("medium").getString("url");
+                                String thumbnailDefault = jsonSnippet.getJSONObject("thumbnails").getJSONObject("default").getString("url");
+                                youtubeObject.setChannelTitle(jsonSnippet.getString("channelTitle"));
+                                youtubeObject.setKind(kind);
                                 youtubeObject.setTitle(title);
+                                youtubeObject.setVideo_id(video_id);
                                 youtubeObject.setDescription(description);
                                 youtubeObject.setPublishedAt(publishedAt);
-                                youtubeObject.setThumbnailHigh(thumbnail);
-                                youtubeObject.setKind(kind);
-                                youtubeObject.setVideo_id(video_id);
+                                youtubeObject.setThumbnailHigh(thumbnailHigh);
+                                youtubeObject.setThumbnailMedium(thumbnailMedium);
+                                youtubeObject.setThumbnailDefault(thumbnailDefault);
                                 mList.add(youtubeObject);
 
                             }

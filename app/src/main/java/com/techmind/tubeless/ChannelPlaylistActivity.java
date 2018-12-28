@@ -65,9 +65,9 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
     private ImageView imageViewBanner;
     private EndlessRecyclerViewScrollListener scrollListener;
     private String pageToken;
-    private ArrayList<YoutubeDataModel> mListData;
     private ImageButton img_bookmark;
     private boolean bookmarkedId = false;
+    private ArrayList<YoutubeDataModel> mListData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,7 +118,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
 
 
         CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&order=date&channelId=" +
-                youtubeDataModel.getChannel_id() + "&maxResults=10&key=" + GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
+                youtubeDataModel.getChannel_id() + "&maxResults=10&key=" + GOOGLE_YOUTUBE_API_KEY ;
         CHANNEL_Banner_GET_URL = "https://www.googleapis.com/youtube/v3/channels?part=brandingSettings&id=" + youtubeDataModel.getChannel_id() + "&key=" + GOOGLE_YOUTUBE_API_KEY;
         getChannelListFromServer(CHANNEL_GET_URL);
         getBannerChannelListFromServer(CHANNEL_Banner_GET_URL);
@@ -221,13 +221,17 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                                 String title = jsonSnippet.getString("title");
                                 String description = jsonSnippet.getString("description");
                                 String publishedAt = jsonSnippet.getString("publishedAt");
-                                String thumbnail = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
-
+                                String thumbnailHigh = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
+                                String thumbnailMedium = jsonSnippet.getJSONObject("thumbnails").getJSONObject("medium").getString("url");
+                                String thumbnailDefault = jsonSnippet.getJSONObject("thumbnails").getJSONObject("default").getString("url");
+                                youtubeObject.setChannelTitle(jsonSnippet.getString("channelTitle"));
                                 youtubeObject.setTitle(title);
+                                youtubeObject.setVideo_id(video_id);
                                 youtubeObject.setDescription(description);
                                 youtubeObject.setPublishedAt(publishedAt);
-                                youtubeObject.setThumbnailHigh(thumbnail);
-                                youtubeObject.setVideo_id(video_id);
+                                youtubeObject.setThumbnailHigh(thumbnailHigh);
+                                youtubeObject.setThumbnailMedium(thumbnailMedium);
+                                youtubeObject.setThumbnailDefault(thumbnailDefault);
                                 mList.add(youtubeObject);
 
                             }
@@ -367,7 +371,6 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                 YoutubeDataModel youtubeDataModel = item;
                 Intent intent = new Intent(ChannelPlaylistActivity.this, VideoPlayerActivity.class);
                 intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
-                intent.putExtra("activity","ChannelPlaylistActivity");
                 startActivity(intent);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
                     overridePendingTransition(R.animator.right_in, R.animator.left_out);

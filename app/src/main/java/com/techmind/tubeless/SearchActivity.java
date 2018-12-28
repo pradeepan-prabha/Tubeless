@@ -12,7 +12,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
@@ -64,11 +63,22 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
     private String search_type = "";
     private String search_url;
     private String kind;
-    private String channelId;
+    private String channelId = "";
     private EndlessRecyclerViewScrollListener scrollListener;
     private CheckBox searchAnyCB;
     private String searchQuery;
     private String queryStr;
+    private String playListID = "";
+    ArrayList<String> videosIdArrayList = new ArrayList<String>();
+    ArrayList<String> channelIdArrayList = new ArrayList<String>();
+    ArrayList<String> playListIdArrayList = new ArrayList<String>();
+    //    ArrayList<YoutubeDataModel> mainArrayList = new ArrayList<YoutubeDataModel>();
+    private HashMap<String, YoutubeDataModel> hmMainListData = new HashMap<>();
+    private HashMap<String, YoutubeDataModel> hmTempListData = new HashMap<>();
+    private HashMap<String, YoutubeDataModel> hmPlayListStatisticsListData = new HashMap<>();
+    private HashMap<String, YoutubeDataModel> hmChannelsStatisticsListData = new HashMap<>();
+    HashMap<String, YoutubeDataModel> hmParsedStatisticsResponse = new HashMap<String, YoutubeDataModel>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,11 +122,11 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                 queryStr=query;
+                queryStr = query;
                 //setting progress message so that users can understand what is happening
                 mProgressDialog.setMessage("Finding videos for " + query.trim());
                 search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + query + "&type=" + searchQuery + "&maxResults=10&key="
-                        + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
+                        + ConstURL.GOOGLE_YOUTUBE_API_KEY;
                 if (!query.isEmpty() && search_type != null) {
                     mProgressDialog.show();
                     mListData.clear();
@@ -163,27 +173,74 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
 
     }
 
-    private ArrayList<YoutubeDataModel> nextPageToken(String pageToken) {
-        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&q=" + queryStr +"&pageToken=" + pageToken + "&type=" + searchQuery +
-                "&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
-        return getEndlessListFromServer(CHANNEL_GET_URL);
+    private void nextPageToken(String pageToken) {
+        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&q=" + queryStr + "&pageToken=" + pageToken + "&type=" + searchQuery +
+                "&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+        getEndlessListFromServer(CHANNEL_GET_URL);
+
 
     }
 
+    private void initList(ArrayList<YoutubeDataModel> mListData) {
+        System.out.println("mListData = " + mListData);
+        adapter = new MultiViewAdapter(SearchActivity.this, mListData, mList_videos, new OnItemClickListener() {
+            private Intent intent;
+
+            @Override
+            public void onItemClick(YoutubeDataModel item) {
+                YoutubeDataModel youtubeDataModel = item;
+                if (youtubeDataModel.getKind().equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
+//                    &&requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.channelKey))
+                    intent = new Intent(SearchActivity.this, ChannelPlaylistActivity.class);
+                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                    startActivity(intent);
+//                    requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.videoKey))
+                } else if (youtubeDataModel.getKind().equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
+                    intent = new Intent(SearchActivity.this, VideoPlayerActivity.class);
+                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                    startActivity(intent);
+                } else if (youtubeDataModel.getKind().equalsIgnoreCase(ConstURL.PLAYLIST_TYPE)) {
+                    intent = new Intent(SearchActivity.this, PlayListActivity.class);
+                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                    startActivity(intent);
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+                    overridePendingTransition(R.animator.right_in, R.animator.left_out);
+                }
+            }
+        });
+
+        mList_videos.setAdapter(adapter);
+//        mList_videos.smoothScrollToPosition(previousListPosition);
+    }
+
     private void getSearchListFromServer(String url) {
+        hmMainListData.clear();
         System.out.println("CHANNLE_GET_URL*************= " + url);
         //Retrieving response from the server
         JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
+
+                        System.out.println("response Channel Api = " + response);
+                        hmMainListData = parseTrendingVideoListFromResponse(response);
+                        if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
+                            getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)));
+                        }if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
+                            getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)));
+                        }if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
+                            getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)));
+                        }
+//                        hmMainListData.putAll(hmVideosStatisticsListData);
+//                        hmMainListData.putAll(hmChannelsStatisticsListData);
+//                        hmMainListData.putAll(hmPlayListStatisticsListData);
+
                         if (mProgressDialog.isShowing()) {
                             mProgressDialog.dismiss();
                         }
-                        System.out.println("response Channel Api = " + response);
-                        mListData = parseTrendingVideoListFromResponse(response);
+                        mListData.addAll(new ArrayList<YoutubeDataModel>(hmMainListData.values()));
                         initList(mListData);
-
                     }
 
                 }, new Response.ErrorListener() {
@@ -206,7 +263,8 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
 
     }
 
-    private ArrayList<YoutubeDataModel> getEndlessListFromServer(String url) {
+    private void getEndlessListFromServer(String url) {
+        hmTempListData.clear();
         System.out.println("CHANNLE_GET_URL*************= " + url);
         //Retrieving response from the server
         JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
@@ -218,11 +276,20 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                         }
                         System.out.println("response Channel Api = " + response);
                         ArrayList<YoutubeDataModel> nextTokenArrayList = new ArrayList<>();
-                        nextTokenArrayList = parseTrendingVideoListFromResponse(response);
+                        hmTempListData = parseTrendingVideoListFromResponse(response);
+                        hmMainListData.putAll(hmTempListData);
+                        if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
+                            getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)));
+                        }if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
+                            getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)));
+                        }if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
+                            getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)));
+                        }
 //                        initList(mListData);
-                        System.out.println("Size=" + nextTokenArrayList.size() + "nextTokenArrayList =" + nextTokenArrayList);
-                        mListData.addAll(nextTokenArrayList);
+//                        System.out.println("Size=" + nextTokenArrayList.size() + "nextTokenArrayList =" + nextTokenArrayList);
+                        mListData.addAll(new ArrayList<YoutubeDataModel>(hmTempListData.values()));
                         System.out.println("Size=" + mListData.size() + "mListData = " + mListData);
+//                        initList(mListData);
                         adapter.notifyItemInserted(mListData.size());
                     }
 
@@ -245,103 +312,113 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
             }
         };
         AppController.getInstance().addToRequestQueue(js, null);
-        return mListData;
     }
 
-    private void initList(ArrayList<YoutubeDataModel> mListData) {
+    private void getStatisticsResponse(String url) {
+        System.out.println("url = " + url);
+        hmParsedStatisticsResponse.clear();
+        JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        if (mProgressDialog.isShowing()) {
+                            mProgressDialog.dismiss();
+                        }
+                        System.out.println("getStatisticsResponse Api = " + response);
+                        hmParsedStatisticsResponse = parseTrendingStatisticsResponse(response);
+//                        initList(mListData);
+//                        System.out.println("Size=" + nextTokenArrayList.size() + "nextTokenArrayList =" + nextTokenArrayList);
+//                        mListData.addAll(nextTokenArrayList);
+//                        System.out.println("Size=" + mListData.size() + "mListData = " + mListData);
+//                        adapter.notifyItemInserted(mListData.size());
+                    }
 
-        adapter = new MultiViewAdapter(SearchActivity.this, mListData, mList_videos, new OnItemClickListener() {
-            private Intent intent;
-
+                }, new Response.ErrorListener() {
             @Override
-            public void onItemClick(YoutubeDataModel item) {
-                YoutubeDataModel youtubeDataModel = item;
-                if (youtubeDataModel.getKind().equalsIgnoreCase("youtube#channel")) {
-//                    &&requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.channelKey))
-                    intent = new Intent(SearchActivity.this, ChannelPlaylistActivity.class);
-                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
-                    intent.putExtra("activity", "SearchActivity");
-                    startActivity(intent);
-//                    requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.videoKey))
-                } else if (youtubeDataModel.getKind().equalsIgnoreCase("youtube#video")) {
-                    intent = new Intent(SearchActivity.this, VideoPlayerActivity.class);
-                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
-                    intent.putExtra("activity", "SearchActivity");
-                    startActivity(intent);
+            public void onErrorResponse(VolleyError error) {
+                if (mProgressDialog.isShowing()) {
+                    mProgressDialog.dismiss();
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-                    overridePendingTransition(R.animator.right_in, R.animator.left_out);
-                }
+                Toast.makeText(SearchActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
             }
-        });
+        }) {
 
-        mList_videos.setAdapter(adapter);
-//        mList_videos.smoothScrollToPosition(previousListPosition);
+            //This is for Headers If You Needed
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "text/plain");
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(js, null);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(final Menu menu) {
-        getMenuInflater().inflate(R.menu.search_type, menu);
-        return true;
-    }
+    public HashMap<String, YoutubeDataModel> parseTrendingVideoListFromResponse(JSONObject jsonObject) {
 
-    public ArrayList<YoutubeDataModel> parseTrendingVideoListFromResponse(JSONObject jsonObject) {
-
-        ArrayList<YoutubeDataModel> mList = new ArrayList<>();
-
+        HashMap<String, YoutubeDataModel> hmList = new HashMap<>();
+        videosIdArrayList.clear();
+        channelIdArrayList.clear();
+        playListIdArrayList.clear();
         if (jsonObject.has("items")) {
             try {
                 if (jsonObject.has("nextPageToken")) {
                     pageToken = jsonObject.getString("nextPageToken");
                 }
+
                 JSONArray jsonArray = jsonObject.getJSONArray("items");
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject json = jsonArray.getJSONObject(i);
                     if (json.has("kind")) {
                         if (json.getString("kind").equals("youtube#searchResult")) {
                             String video_id = "";
+                            String hashMapKey = "";
                             if (json.has("id")) {
+                                YoutubeDataModel youtubeObject = new YoutubeDataModel();
                                 JSONObject json1 = json.getJSONObject("id");
                                 kind = json1.getString("kind");
-                                if (kind.equalsIgnoreCase("youtube#channel")) {
-
+                                if (kind.equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
                                     channelId = json1.getString("channelId");
+                                    channelIdArrayList.add(channelId);
+                                    youtubeObject.setVideo_id(video_id);
+                                    hashMapKey = channelId;
                                     System.out.println("channelId = " + channelId);
+                                    youtubeObject.setChannel_id(channelId);
                                 }
-                                if (kind.equalsIgnoreCase("youtube#video")) {
+                                if (kind.equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
                                     video_id = json1.getString("videoId");
+                                    videosIdArrayList.add(video_id);
+                                    hashMapKey = video_id;
                                     System.out.println("video_id = " + video_id);
                                 }
+                                if (kind.equalsIgnoreCase(ConstURL.PLAYLIST_TYPE)) {
+                                    playListID = json1.getString("playlistId");
+                                    playListIdArrayList.add(playListID);
+                                    hashMapKey = playListID;
+                                    System.out.println("PlayListID = " + playListID);
+                                    youtubeObject.setPlayList_id(playListID);
+                                }
+
+                                JSONObject jsonSnippet = json.getJSONObject("snippet");
+                                String title = jsonSnippet.getString("title");
+
+                                String description = jsonSnippet.getString("description");
+                                System.out.println("description = " + description);
+                                String publishedAt = jsonSnippet.getString("publishedAt");
+                                System.out.println("publishedAt = " + publishedAt);
+                                String thumbnailHigh = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
+                                String thumbnailMedium = jsonSnippet.getJSONObject("thumbnails").getJSONObject("medium").getString("url");
+                                String thumbnailDefault = jsonSnippet.getJSONObject("thumbnails").getJSONObject("default").getString("url");
+                                youtubeObject.setTitle(title);
+                                youtubeObject.setDescription(description);
+                                youtubeObject.setPublishedAt(publishedAt);
+                                youtubeObject.setThumbnailHigh(thumbnailHigh);
+                                youtubeObject.setThumbnailMedium(thumbnailMedium);
+                                youtubeObject.setThumbnailDefault(thumbnailDefault);
+                                youtubeObject.setKind(kind);
+                                youtubeObject.setChannelTitle(jsonSnippet.getString("channelTitle"));
+                                hmList.put(hashMapKey, youtubeObject);
                             }
-                       /* if (jsonID.has("videoId")) {
-                            video_id = jsonID.getString("videoId");
-                        }*/
-
-
-                            YoutubeDataModel youtubeObject = new YoutubeDataModel();
-                            JSONObject jsonSnippet = json.getJSONObject("snippet");
-                            String title = jsonSnippet.getString("title");
-                            if (json.has("videoId")) {
-                                video_id = json.getString("videoId");
-                            }
-                            String description = jsonSnippet.getString("description");
-                            System.out.println("description = " + description);
-                            String publishedAt = jsonSnippet.getString("publishedAt");
-                            System.out.println("publishedAt = " + publishedAt);
-                            String thumbnailHigh = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
-                            String thumbnailMedium = jsonSnippet.getJSONObject("thumbnails").getJSONObject("medium").getString("url");
-                            String thumbnailDefault = jsonSnippet.getJSONObject("thumbnails").getJSONObject("default").getString("url");
-                            youtubeObject.setTitle(title);
-                            youtubeObject.setDescription(description);
-                            youtubeObject.setPublishedAt(publishedAt);
-                            youtubeObject.setThumbnailHigh(thumbnailHigh);
-                            youtubeObject.setThumbnailMedium(thumbnailMedium);
-                            youtubeObject.setThumbnailDefault(thumbnailDefault);
-                            youtubeObject.setChannel_id(channelId);
-                            youtubeObject.setKind(kind);
-                            youtubeObject.setVideo_id(video_id);
-                            mList.add(youtubeObject);
-
                         }
                     }
 
@@ -351,7 +428,79 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
             }
         }
 
-        return mList;
+        return hmList;
+    }
+
+    private HashMap<String, YoutubeDataModel> parseTrendingStatisticsResponse(JSONObject jsonObject) {
+        HashMap<String, YoutubeDataModel> hmList = new HashMap<String, YoutubeDataModel>();
+        if (jsonObject.has("items")) {
+            try {
+                JSONArray jsonArray = jsonObject.getJSONArray("items");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject json = jsonArray.getJSONObject(i);
+                    String video_id = "";
+                    String hashMapKey = "";
+//                    YoutubeDataModel youtubeObject = new YoutubeDataModel();
+                    kind = json.getString("kind");
+                    if (hmMainListData.containsKey(json.getString("id"))) {
+                        if (kind.equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
+                            channelId = json.getString("id");
+                            hashMapKey = channelId;
+                            hmMainListData.get(hashMapKey).setChannel_id(channelId);
+                            System.out.println("channelId = " + channelId);
+                            hmMainListData.get(hashMapKey).setViewCount(json.getJSONObject("statistics").getString("viewCount"));
+                            hmMainListData.get(hashMapKey).setVideoCount(json.getJSONObject("statistics").getString("videoCount"));
+                            hmMainListData.get(hashMapKey).setCommentCount(json.getJSONObject("statistics").getString("commentCount"));
+                            hmMainListData.get(hashMapKey).setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
+                        }
+                        if (kind.equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
+                            video_id = json.getString("id");
+                            hashMapKey = video_id;
+                            hmMainListData.get(hashMapKey).setVideo_id(video_id);
+                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("contentDetails").getString("duration"));
+                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("viewCount"));
+                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("likeCount"));
+                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("dislikeCount"));
+                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("favoriteCount"));
+                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("commentCount"));
+                            System.out.println("video_id = " + video_id);
+                        }
+                        if (kind.equalsIgnoreCase(ConstURL.PLAYLIST_TYPE)) {
+                            playListID = json.getString("id");
+                            hashMapKey = playListID;
+                            hmMainListData.get(hashMapKey).setPlayList_id(playListID);
+                            hmMainListData.get(hashMapKey).setVideoCount(json.getJSONObject("contentDetails").getString("itemCount"));
+                            System.out.println("PlayListID = " + playListID);
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+//            adapter.notifyDataSetChanged();
+        }
+        return hmList;
+    }
+
+    private String channelIdStatisticsQuery(String ids) {
+        return "https://www.googleapis.com/youtube/v3/channels?part=statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+    }
+
+    private String videosIdStatisticsQuery(String ids) {
+        return "https:///www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+    }
+
+    private String playListIdStatisticsQuery(String ids) {
+        return "https://www.googleapis.com/youtube/v3/playlists?part=contentDetails&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+    }
+
+    private String appendWithCommaIds(ArrayList<String> idArrayList) {
+        StringBuilder result = new StringBuilder();
+        for (String string : idArrayList) {
+            result.append(string);
+            result.append(",");
+        }
+        return result.length() > 0 ? result.substring(0, result.length() - 1) : "";
     }
 
     private void setUpToolbar() {
