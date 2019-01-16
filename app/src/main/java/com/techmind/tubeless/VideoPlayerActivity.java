@@ -5,23 +5,24 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,6 +35,7 @@ import com.google.android.youtube.player.YouTubeBaseActivity;
 import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.google.android.youtube.player.YouTubePlayer;
 import com.google.android.youtube.player.YouTubePlayerView;
+import com.squareup.picasso.Picasso;
 import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 import com.techmind.tubeless.adapters.CommentAdapter;
 import com.techmind.tubeless.adapters.VideoPostAdapter;
@@ -42,6 +44,7 @@ import com.techmind.tubeless.config.ConstURL;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
 import com.techmind.tubeless.models.YoutubeCommentModel;
 import com.techmind.tubeless.models.YoutubeDataModel;
+import com.techmind.tubeless.util.ConnectionDetector;
 import com.techmind.tubeless.util.Localization;
 
 import org.json.JSONArray;
@@ -64,16 +67,17 @@ import at.huber.youtubeExtractor.YtFile;
 
 import static com.techmind.tubeless.config.ConstURL.CHANNEL_GET_URL;
 import static com.techmind.tubeless.config.ConstURL.GOOGLE_YOUTUBE_API_KEY;
+import static com.techmind.tubeless.config.ConstURL.PLAYLIST_TYPE;
 import static com.techmind.tubeless.config.ConstURL.VIDEOS_TYPE;
+import static com.techmind.tubeless.util.AnimationUtils.animateView;
 
 
-public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubePlayer.OnInitializedListener ,   View.OnClickListener,
-        View.OnLongClickListener{
+public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubePlayer.OnInitializedListener, View.OnClickListener,
+        View.OnLongClickListener {
     private static final int READ_STORAGE_PERMISSION_REQUEST_CODE = 1;
     private YoutubeDataModel youtubeDataModel = null;
     TextView videoTitleTextView;
     TextView textViewDes;
-    TextView textViewDate;
     private ImageView uploaderThumb;
     JSONObject jsonObjUserDetail = new JSONObject();
     // ImageView imageViewIcon;
@@ -92,6 +96,24 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     private LinearLayout videoDescriptionRootLayout;
     private View videoTitleRoot;
     private TextView uploaderTextView;
+    private TextView videoCountView;
+
+    private TextView detailControlsBackground;
+    private TextView detailControlsPopup;
+    private TextView detailControlsAddToPlaylist;
+    private TextView detailControlsDownload;
+    private TextView appendControlsDetail;
+    private ProgressBar loadingProgressBar;
+
+    protected View errorPanelRoot;
+    protected Button errorButtonRetry;
+    protected TextView errorTextView;
+    private TextView videoUploadDateView;
+    private View uploaderRootLayout;
+    private TextView thumbsUpTextView;
+    private ImageView thumbsUpImageView;
+    private TextView thumbsDownTextView;
+    private ImageView thumbsDownImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,25 +131,57 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         textViewDes = (TextView) findViewById(R.id.detail_description_view);
         img_bookmark = findViewById(R.id.img_bookmark);
         // imageViewIcon = (ImageView) findViewById(R.id.imageView);
-        textViewDate = (TextView) findViewById(R.id.detail_upload_date_view);
         uploaderThumb = findViewById(R.id.detail_uploader_thumbnail_view);
 
         videoTitleTextView.setText(youtubeDataModel.getTitle());
         textViewDes.setText(youtubeDataModel.getDescription());
+
+        videoTitleRoot = findViewById(R.id.detail_title_root_layout);
+        videoTitleTextView = findViewById(R.id.detail_video_title_view);
+        videoTitleToggleArrow = findViewById(R.id.detail_toggle_description_view);
+        videoCountView = findViewById(R.id.detail_view_count_view);
+        loadingProgressBar = findViewById(R.id.loading_progress_bar);
+
+        errorPanelRoot = findViewById(R.id.error_panel);
+        errorButtonRetry = findViewById(R.id.error_button_retry);
+        errorTextView = findViewById(R.id.error_message_view);
+
+//        videoDescriptionView.setMovementMethod(LinkMovementMethod.getInstance());
+//        videoDescriptionView.setAutoLinkMask(Linkify.WEB_URLS);
+
+        //thumbsRootLayout = rootView.findViewById(R.id.detail_thumbs_root_layout);
+        thumbsUpTextView = findViewById(R.id.detail_thumbs_up_count_view);
+        thumbsUpImageView = findViewById(R.id.detail_thumbs_up_img_view);
+        thumbsDownTextView = findViewById(R.id.detail_thumbs_down_count_view);
+        thumbsDownImageView = findViewById(R.id.detail_thumbs_down_img_view);
+        uploaderRootLayout = findViewById(R.id.detail_uploader_root_layout);
+        videoUploadDateView = findViewById(R.id.detail_upload_date_view);
+
+
 //        textViewDate.setText(youtubeDataModel.getPublishedAt());
         if (!TextUtils.isEmpty(youtubeDataModel.getPublishedAt())) {
-            textViewDate.setText(Localization.localizeDate(this, youtubeDataModel.getPublishedAt()));
+            videoUploadDateView.setText(Localization.localizeDate(this, youtubeDataModel.getPublishedAt()));
         }
         mList_videos = (RecyclerView) findViewById(R.id.mList_videos);
         mList_videos.setLayoutManager(new LinearLayoutManager(this));
         mList_videos.hasFixedSize();
 
         videoTitleRoot.setOnClickListener(this);
+        uploaderRootLayout.setOnClickListener(this);
         img_bookmark.setOnClickListener(this);
         checkBookmarkTag();
         ViewCompat.setNestedScrollingEnabled(mList_videos, false);
-        getChannelListFromServer("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
-                "&part=contentDetails&relatedToVideoId=" + youtubeDataModel.getVideo_id() + "&maxResults=10&key=" + GOOGLE_YOUTUBE_API_KEY);
+
+//        errorTextView.setText(message);
+        ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
+        if (connectionDetector.isConnectingToInternet()) {
+            animateView(errorButtonRetry, true, 600);
+            getRelatedVideoListFromServer("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
+                    "&part=contentDetails&relatedToVideoId=" + youtubeDataModel.getVideo_id() + "&maxResults=10&key=" + GOOGLE_YOUTUBE_API_KEY);
+        } else {
+            animateView(errorButtonRetry, false, 0);
+            animateView(errorPanelRoot, true, 300);
+        }
 
         if (!checkPermissionForReadExtertalStorage()) {
             try {
@@ -137,6 +191,73 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
             }
         }
 
+        setVideoStatisticsDetails();
+    }
+
+    private void setVideoStatisticsDetails() {
+        getStatisticsResponse(channelIdStatisticsQuery(youtubeDataModel.getChannel_id()), youtubeDataModel,false);
+        if (!TextUtils.isEmpty(youtubeDataModel.getChannelTitle())) {
+            uploaderTextView.setText(youtubeDataModel.getChannelTitle());
+            uploaderTextView.setVisibility(View.VISIBLE);
+            uploaderTextView.setSelected(true);
+        } else {
+            uploaderTextView.setVisibility(View.GONE);
+        }
+        uploaderThumb.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.buddy));
+
+        if (!youtubeDataModel.getViewCount().isEmpty() && Integer.parseInt(youtubeDataModel.getViewCount()) >= 0) {
+            videoCountView.setText(Localization.localizeViewCount(this, Integer.parseInt(youtubeDataModel.getViewCount())));
+            videoCountView.setVisibility(View.VISIBLE);
+        } else {
+            videoCountView.setVisibility(View.GONE);
+        }
+
+        if (!youtubeDataModel.getDislikeCount().isEmpty() && Integer.parseInt(youtubeDataModel.getDislikeCount()) == -1
+                && !youtubeDataModel.getLikeCount().isEmpty() && Integer.parseInt(youtubeDataModel.getLikeCount()) == -1) {
+            thumbsDownImageView.setVisibility(View.VISIBLE);
+            thumbsUpImageView.setVisibility(View.VISIBLE);
+            thumbsUpTextView.setVisibility(View.GONE);
+            thumbsDownTextView.setVisibility(View.GONE);
+        } else {
+            if (!youtubeDataModel.getDislikeCount().isEmpty() && Integer.parseInt(youtubeDataModel.getDislikeCount()) >= 0) {
+                thumbsDownTextView.setText(Localization.shortCount(this, Integer.parseInt(youtubeDataModel.getDislikeCount())));
+                thumbsDownTextView.setVisibility(View.VISIBLE);
+                thumbsDownImageView.setVisibility(View.VISIBLE);
+            } else {
+                thumbsDownTextView.setVisibility(View.GONE);
+                thumbsDownImageView.setVisibility(View.GONE);
+            }
+
+            if (!youtubeDataModel.getLikeCount().isEmpty() && Integer.parseInt(youtubeDataModel.getLikeCount()) >= 0) {
+                thumbsUpTextView.setText(Localization.shortCount(this, Integer.parseInt(youtubeDataModel.getLikeCount())));
+                thumbsUpTextView.setVisibility(View.VISIBLE);
+                thumbsUpImageView.setVisibility(View.VISIBLE);
+            } else {
+                thumbsUpTextView.setVisibility(View.GONE);
+                thumbsUpImageView.setVisibility(View.GONE);
+            }
+        }
+
+        /*if (!youtubeDataModel.getDuration().isEmpty() &&Integer.parseInt(youtubeDataModel.getDuration()) > 0) {
+            detailDurationView.setText(Localization.getDurationString(Integer.parseInt(youtubeDataModel.getDuration())));
+            detailDurationView.setBackgroundColor(ContextCompat.getColor(this, R.color.duration_background_color));
+            animateView(detailDurationView, true, 100);
+        } else {
+            detailDurationView.setVisibility(View.GONE);
+        }*/
+        if (!TextUtils.isEmpty(youtubeDataModel.getUploaderAvatarUrl())) {
+        }
+        if (videoTitleToggleArrow != null) {
+            videoTitleRoot.setClickable(true);
+            videoTitleToggleArrow.setVisibility(View.VISIBLE);
+            videoTitleToggleArrow.setImageResource(R.drawable.arrow_down);
+            videoDescriptionRootLayout.setVisibility(View.GONE);
+        } else {
+            videoDescriptionRootLayout.setVisibility(View.VISIBLE);
+        }
+        if (!TextUtils.isEmpty(youtubeDataModel.getPublishedAt())) {
+            videoUploadDateView.setText(Localization.localizeDate(this, youtubeDataModel.getPublishedAt()));
+        }
     }
 
     private void getVideoStatistics(String url) {
@@ -149,9 +270,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                         System.out.println("response Channel Api = " + response);
                         mListData = parseTrendingVideoStatistics(response);
                         initList(mListData);
-
                     }
-
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
@@ -180,10 +299,20 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         switch (v.getId()) {
             case R.id.detail_title_root_layout:
                 toggleTitleAndDescription();
-                break; case R.id.img_bookmark:
+                break;
+            case R.id.detail_uploader_root_layout:
+                Intent intent = new Intent(VideoPlayerActivity.this, ChannelPlaylistActivityWithoutAnim.class);
+                intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+                System.out.println("youtubeDataModel.getUploaderAvatarUrl() = " + youtubeDataModel.getUploaderAvatarUrl());
+                intent.putExtra("requestStatistics", true);
+                startActivity(intent);
+//                toggleTitleAndDescription();
+                break;
+            case R.id.img_bookmark:
                 // Add sample post to the database
-                System.out.println("youtubeDataModel.getVideo_id()%%%%% = " + youtubeDataModel.getVideo_id());
+                System.out.println("OnClicked Video_id=************** " + youtubeDataModel.getVideo_id());
                 if (!bookmarkedId) {
+                    youtubeDataModel.setKind(VIDEOS_TYPE);
                     if (PostsDatabaseHelper.getInstance(v.getContext()).addPost(youtubeDataModel, VIDEOS_TYPE)) {
 //                    Toast.makeText(getApplicationContext(),"Channel is Bookmarked successfully",Toast.LENGTH_SHORT).show();
                         checkBookmarkTag();
@@ -200,6 +329,11 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                 break;
         }
     }
+
+    private String videosIdStatisticsQuery(String ids) {
+        return "https:///www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+    }
+
     private void toggleTitleAndDescription() {
         if (videoTitleToggleArrow != null) {    //it is null for tablets
             if (videoDescriptionRootLayout.getVisibility() == View.VISIBLE) {
@@ -213,17 +347,23 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
             }
         }
     }
-    private void getChannelListFromServer(String url) {
-        System.out.println("CHANNLE_GET_URL*************= " + url);
+
+    private void getRelatedVideoListFromServer(String url) {
+        System.out.println("GET_RELATED_VIDEO_LIST_URL*************= " + url);
+        if (loadingProgressBar != null) animateView(loadingProgressBar, true, 400);
+        animateView(errorPanelRoot, false, 150);
         //Retrieving response from the server
         JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        System.out.println("response Channel Api = " + response);
+//                        showLoading();
+                        System.out.println("response related video list Api = " + response);
                         mListData = parseTrendingVideoListFromResponse(response);
                         initList(mListData);
 
+                        if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
+                        animateView(errorPanelRoot, false, 150);
                     }
 
                 }, new Response.ErrorListener() {
@@ -245,29 +385,22 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
 
     }
 
+    /* public void showLoading() {
+         loadingProgressBar.setVisibility(View.VISIBLE);
+         if (loadingProgressBar != null) animateView(loadingProgressBar, true, 400);
+         animateView(errorPanelRoot, false, 150);
+     }*/
+   /* public void showEmptyState() {
+        loadingProgressBar.setVisibility(View.INVISIBLE);
+        if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
+        animateView(errorPanelRoot, false, 150);
+    }*/
     private void initList(ArrayList<YoutubeDataModel> mListData) {
         adapter = new VideoPostAdapter(getApplicationContext(), mListData, mList_videos, new OnItemClickListener() {
-            private Intent intent;
-
             @Override
             public void onItemClick(YoutubeDataModel item) {
-                YoutubeDataModel youtubeDataModel = item;
-                System.out.println("youtubeDataModel = " + youtubeDataModel);
-                if (youtubeDataModel.getKind().equalsIgnoreCase("youtube#channel")) {
-//                    &&requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.channelKey))
-                    intent = new Intent(getApplicationContext(), ChannelPlaylistActivity.class);
-                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
-                    intent.putExtra("activity","SearchActivity");
-                    startActivity(intent);
-//                    requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.videoKey))
-                } else if (youtubeDataModel.getKind().equalsIgnoreCase("youtube#video")) {
-                    intent = new Intent(getApplicationContext(), VideoPlayerActivity.class);
-                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
-                    intent.putExtra("activity","SearchActivity");
-                    startActivity(intent);
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-                    overridePendingTransition(R.animator.right_in, R.animator.left_out);
+                if (item != null && !item.getVideo_id().isEmpty()) {
+                    getStatisticsResponse(videosIdStatisticsQuery(item.getVideo_id()), item,true);
                 }
             }
         });
@@ -284,6 +417,100 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
             bookmarkedId = true;
         }
     }
+
+    private void getStatisticsResponse(String url, YoutubeDataModel item,Boolean passToNextActivity ) {
+        System.out.println("Request_Statistics_URL=****************** " + url);
+        JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        System.out.println("Get Statistics Response Api************* = " + response);
+                        Intent intent;
+                        parseTrendingStatisticsResponse(response, item);
+                        if(passToNextActivity) {
+                            if (item.getKind().equalsIgnoreCase("youtube#video")) {
+//                                parseTrendingStatisticsResponse(response, item);
+                                intent = new Intent(getApplicationContext(), VideoPlayerActivity.class);
+                                intent.putExtra(YoutubeDataModel.class.toString(), item);
+                                intent.putExtra("activity", "VideoPlayerActivity");
+                                startActivity(intent);
+                            }
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+                            overridePendingTransition(R.animator.right_in, R.animator.left_out);
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(VideoPlayerActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+            }
+        }) {
+
+            //This is for Headers If You Needed
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "text/plain");
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(js, null);
+    }
+
+    private void parseTrendingStatisticsResponse(JSONObject jsonObject, YoutubeDataModel item) {
+        if (jsonObject.has("items")) {
+            try {
+                JSONArray jsonArray = jsonObject.getJSONArray("items");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject json = jsonArray.getJSONObject(i);
+                    String video_id = "";
+//                    YoutubeDataModel youtubeObject = new YoutubeDataModel();
+                    String kind = json.getString("kind");
+                    if (kind.equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
+                        String channelId = json.getString("id");
+                        item.setChannel_id(channelId);
+                        System.out.println("channelId = " + channelId);
+                        if (json.has("statistics") && json.getJSONObject("statistics").has("videoCount"))
+                            item.setVideoCount(json.getJSONObject("statistics").getString("videoCount"));
+                        if (json.has("statistics") && json.getJSONObject("statistics").has("viewCount"))
+                            item.setViewCount(json.getJSONObject("statistics").getString("viewCount"));
+                        if (json.has("statistics") && json.getJSONObject("statistics").has("subscriberCount"))
+                            item.setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
+                        if (json.has("snippet") && json.getJSONObject("snippet").has("thumbnails"))
+                            item.setUploaderAvatarUrl(json.getJSONObject("snippet").getJSONObject("thumbnails").getJSONObject("default").getString("url"));
+                        Picasso.get().load(youtubeDataModel.getUploaderAvatarUrl()).into(uploaderThumb);
+
+                    }
+                    if (item.getVideo_id().equals(json.getString("id"))) {
+                        if (kind.equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
+                            video_id = json.getString("id");
+                            item.setVideo_id(video_id);
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("duration"))
+                                item.setDuration(json.getJSONObject("contentDetails").getString("duration"));
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("subscriberCount"))
+                                item.setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("viewCount"))
+                                item.setViewCount(json.getJSONObject("statistics").getString("viewCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("likeCount"))
+                                item.setLikeCount(json.getJSONObject("statistics").getString("likeCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("dislikeCount"))
+                                item.setDislikeCount(json.getJSONObject("statistics").getString("dislikeCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("favoriteCount"))
+                                item.setFavoriteCount(json.getJSONObject("statistics").getString("favoriteCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("commentCount"))
+                                item.setCommentCount(json.getJSONObject("statistics").getString("commentCount"));
+                            System.out.println("video_id = " + video_id);
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+//            adapter.notifyDataSetChanged();
+        }
+    }
+
 
     public ArrayList<YoutubeDataModel> parseTrendingVideoListFromResponse(JSONObject jsonObject) {
 
@@ -309,7 +536,8 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                                 String title = jsonSnippet.getString("title");
                                 if (json.has("videoId")) {
                                     video_id = json.getString("videoId");
-                                }
+                                    }
+                                youtubeObject.setChannel_id(jsonSnippet.getString("channelId"));
                                 String description = jsonSnippet.getString("description");
                                 String publishedAt = jsonSnippet.getString("publishedAt");
 
@@ -344,7 +572,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     private void nextPageToken(String pageToken) {
         CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?pageToken=" + pageToken + "&part=snippet&chart=mostPopular&regionCode=IN&" +
                 "maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
-        getChannelListFromServer(CHANNEL_GET_URL);
+        getRelatedVideoListFromServer(CHANNEL_GET_URL);
 
     }
 
@@ -569,13 +797,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
             if (pDialog.isShowing())
                 pDialog.dismiss();
         }
-    }
 
-
-    public void initVideoList(ArrayList<YoutubeCommentModel> mListData) {
-        mList_videos.setLayoutManager(new LinearLayoutManager(this));
-        mAdapter = new CommentAdapter(this, mListData);
-        mList_videos.setAdapter(mAdapter);
     }
 
     public ArrayList<YoutubeCommentModel> parseJson(JSONObject jsonObject) {
@@ -664,17 +886,24 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         AppController.getInstance().addToRequestQueue(js, null);
 
     }
+
     @Override
     protected void onResume() {
         super.onResume();
 
     }
+
     @Override
     public void onBackPressed() {
-       finish();
+        finish();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
             this.overridePendingTransition(R.animator.left_to_right, R.animator.right_to_left);
         }
         super.onBackPressed();
     }
+
+    private String channelIdStatisticsQuery(String ids) {
+        return "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+    }
+
 }

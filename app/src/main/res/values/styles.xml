@@ -11,12 +11,20 @@
         <item name="android:textColorSecondary">@android:color/white</item>
         <item name="actionBarStyle">@style/AppBarOverlay</item>
     </style>
-
+    <style name="RedAccent" parent="ThemeOverlay.AppCompat.Light">
+        <item name="colorAccent">@color/colorPrimaryDark</item>
+    </style>
     <style name="SearchViewTheme" parent="Widget.AppCompat.Light.SearchView">
         <item name="android:textColor">@color/white</item>
         <item name="android:editTextColor">@color/white</item>
         <item name="android:textColorHint">@color/white</item>
     </style>
+    <style name="RedButton" parent="Widget.AppCompat.Button.Colored">
+        <item name="colorButtonNormal">@color/subscribe_background_color</item>
+        <item name="android:textColor">@color/subscribe_text_color</item>
+        <item name="colorControlHighlight">@color/dark_ripple_color</item>
+    </style>
+
 
     <style name="AppBarOverlay" parent="Widget.AppCompat.Light.ActionBar.Solid">
         <item name="elevation">0dp</item>

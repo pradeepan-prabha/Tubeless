@@ -73,6 +73,7 @@
                         tools:ignore="ContentDescription,RtlHardcoded"/>
 
                 </FrameLayout>
+
                 <!--DETAIL-->
 
                 <View
@@ -317,7 +318,26 @@
                         android:layout_marginBottom="10dp"
                         android:text="Up next"
                         android:textColor="@color/common_blue_bg" />
+                    <!-- LOADING INDICATOR-->
+                    <ProgressBar
+                        android:id="@+id/loading_progress_bar"
+                        android:theme="@style/RedAccent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
+                        android:indeterminate="true"
+                        android:visibility="gone"
+                        tools:visibility="visible"/>
 
+                    <!--ERROR PANEL-->
+                    <include
+                        android:id="@+id/error_panel"
+                        layout="@layout/error_retry"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
+                        android:visibility="gone"
+                        tools:visibility="visible"/>
                     <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">

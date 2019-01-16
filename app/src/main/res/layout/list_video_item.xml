@@ -24,6 +24,30 @@
         tools:ignore="RtlHardcoded"/>
 
     <TextView
+        android:id="@+id/detail_duration_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/itemThumbnailView"
+        android:layout_alignBottom="@+id/itemThumbnailView"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="2dp"
+        android:layout_marginBottom="2dp"
+        android:alpha=".6"
+        android:gravity="center"
+        android:paddingLeft="6dp"
+        android:paddingTop="2dp"
+        android:paddingRight="6dp"
+        android:paddingBottom="2dp"
+        android:textAllCaps="true"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        tools:ignore="RtlHardcoded"
+        tools:text="12:38"
+        tools:visibility="visible" />
+
+    <TextView
         android:id="@+id/itemTitleView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -17,14 +17,16 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 import com.techmind.tubeless.adapters.MultiViewAdapter;
-import com.techmind.tubeless.adapters.VideoPostAdapter;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
 import com.techmind.tubeless.models.YoutubeDataModel;
+import com.techmind.tubeless.util.ConnectionDetector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +34,7 @@ import java.util.List;
 import static com.techmind.tubeless.config.ConstURL.CHANNEL_TYPE;
 import static com.techmind.tubeless.config.ConstURL.PLAYLIST_TYPE;
 import static com.techmind.tubeless.config.ConstURL.VIDEOS_TYPE;
+import static com.techmind.tubeless.util.AnimationUtils.animateView;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -51,7 +54,12 @@ public class MainActivity extends AppCompatActivity {
     private int mCurrentSelectedPosition;
     private TextView empty_view;
     Toolbar toolbar;
+    private ProgressBar loadingProgressBar;
+    private View errorPanelRoot;
+    private Button errorButtonRetry;
+    private TextView errorTextView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
+    private List<YoutubeDataModel> youtubeDataModelsList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +69,10 @@ public class MainActivity extends AppCompatActivity {
         FloatingActionButton fab = findViewById(R.id.fab);
         mUserLearnedDrawer = Boolean.valueOf(readSharedSetting(this, PREF_USER_LEARNED_DRAWER, "false"));
         mNavigationView = (NavigationView) findViewById(R.id.nav_view);
+        loadingProgressBar = findViewById(R.id.loading_progress_bar);
+        errorPanelRoot = findViewById(R.id.error_panel);
+        errorButtonRetry = findViewById(R.id.error_button_retry);
+        errorTextView = findViewById(R.id.error_message_view);
 
         setUpToolbar();
         setUpNavDrawer();
@@ -76,6 +88,12 @@ public class MainActivity extends AppCompatActivity {
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                getBookMarkedDate();
+            }
+        });
+        errorButtonRetry.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
                 getBookMarkedDate();
             }
         });
@@ -119,8 +137,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getBookMarkedDate() {
+        ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
+        if (connectionDetector.isConnectingToInternet()) {
         // Get all posts from database
-        List<YoutubeDataModel> youtubeDataModelsList = PostsDatabaseHelper.getInstance(getApplicationContext()).getAllPosts();
+        youtubeDataModelsList = PostsDatabaseHelper.getInstance(getApplicationContext()).getAllPosts();
         if (youtubeDataModelsList.size() > 0) {
             empty_view.setVisibility(View.GONE);
         } else {
@@ -129,9 +149,20 @@ public class MainActivity extends AppCompatActivity {
 //        for (YoutubeDataModel youtubeDataModelsIndex : youtubeDataModelsList) {
 //        }
         initList((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
+        } else {
+            if (youtubeDataModelsList!=null&&youtubeDataModelsList.size() > 0) {
+                youtubeDataModelsList.clear();
+                adapter.notifyDataSetChanged();
+            }
+            errorPanelRoot.setVisibility(View.VISIBLE);
+            errorTextView.setText("No Network");
+        }
         if (mSwipeRefreshLayout != null && mSwipeRefreshLayout.isRefreshing()) {
             mSwipeRefreshLayout.setRefreshing(false);
         }
+        if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
+        animateView(errorPanelRoot, false, 150);
+
     }
 
     private void initList(ArrayList<YoutubeDataModel> mListData) {
@@ -143,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
             public void onItemClick(YoutubeDataModel item) {
                 YoutubeDataModel youtubeDataModel = item;
                 if (youtubeDataModel.getKind().equals(CHANNEL_TYPE)) {
-                    intent = new Intent(MainActivity.this, ChannelPlaylistActivity.class);
+                    intent = new Intent(MainActivity.this, ChannelPlaylistActivityWithoutAnim.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
                     intent.putExtra("activity", "MainActivity");
                     startActivity(intent);
@@ -168,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
 //        mList_videos.smoothScrollToPosition(previousListPosition);
     }
 
-    @Override
+ /*   @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_home, menu);
         return true;
@@ -189,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
+    }*/
 
     @Override
     public void onSaveInstanceState(Bundle outState) {

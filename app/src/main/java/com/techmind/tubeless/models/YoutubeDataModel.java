@@ -26,6 +26,26 @@ public class YoutubeDataModel implements Parcelable {
     private String commentCount = "";
     private String subscriberCount = "";
     private String videoCount = "";
+    private String uploaderAvatarUrl = "";
+
+
+    public String getUploaderAvatarUrl() {
+        return uploaderAvatarUrl;
+    }
+
+    public void setUploaderAvatarUrl(String uploaderAvatarUrl) {
+        this.uploaderAvatarUrl = uploaderAvatarUrl;
+    }
+
+    public String getChannelBannerImageUrl() {
+        return channelBannerImageUrl;
+    }
+
+    public void setChannelBannerImageUrl(String channelBannerImageUrl) {
+        this.channelBannerImageUrl = channelBannerImageUrl;
+    }
+
+    private String channelBannerImageUrl = "";
 
     public String getDuration() {
         return duration;
@@ -218,14 +238,16 @@ public class YoutubeDataModel implements Parcelable {
         dest.writeString(playList_id);
         dest.writeString(channelTitle);
         dest.writeString(viewCount );
-        dest.writeString(likeCount );
+        dest.writeString(likeCount);
         dest.writeString(dislikeCount);
         dest.writeString(favoriteCount);
         dest.writeString(commentCount );
         dest.writeString(subscriberCount);
-        dest.writeString(videoCount );
-        dest.writeString(playListCount );
-        dest.writeString(duration );
+        dest.writeString(videoCount);
+        dest.writeString(uploaderAvatarUrl);
+        dest.writeString(channelBannerImageUrl);
+        dest.writeString(playListCount);
+        dest.writeString(duration);
     }
 
     public YoutubeDataModel() {
@@ -257,6 +279,8 @@ public class YoutubeDataModel implements Parcelable {
         this.commentCount = in.readString();
         this.subscriberCount = in.readString();
         this.videoCount = in.readString();
+        this.channelBannerImageUrl = in.readString();
+        this.uploaderAvatarUrl = in.readString();
         this.playListCount = in.readString();
         this.duration = in.readString();
 

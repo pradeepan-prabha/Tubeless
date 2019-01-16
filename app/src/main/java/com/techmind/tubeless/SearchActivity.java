@@ -14,10 +14,13 @@ import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -30,6 +33,7 @@ import com.techmind.tubeless.config.AppController;
 import com.techmind.tubeless.config.ConstURL;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
 import com.techmind.tubeless.models.YoutubeDataModel;
+import com.techmind.tubeless.util.ConnectionDetector;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -66,7 +70,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
     private String channelId = "";
     private EndlessRecyclerViewScrollListener scrollListener;
     private CheckBox searchAnyCB;
-    private String searchQuery;
+    private String searchQueryType;
     private String queryStr;
     private String playListID = "";
     ArrayList<String> videosIdArrayList = new ArrayList<String>();
@@ -75,10 +79,10 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
     //    ArrayList<YoutubeDataModel> mainArrayList = new ArrayList<YoutubeDataModel>();
     private HashMap<String, YoutubeDataModel> hmMainListData = new HashMap<>();
     private HashMap<String, YoutubeDataModel> hmTempListData = new HashMap<>();
-    private HashMap<String, YoutubeDataModel> hmPlayListStatisticsListData = new HashMap<>();
-    private HashMap<String, YoutubeDataModel> hmChannelsStatisticsListData = new HashMap<>();
-    HashMap<String, YoutubeDataModel> hmParsedStatisticsResponse = new HashMap<String, YoutubeDataModel>();
-
+    private ProgressBar loadingProgressBar;
+    private View errorPanelRoot;
+    private Button errorButtonRetry;
+    private TextView errorTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,9 +97,9 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
         mList_videos = (RecyclerView) layoutView.findViewById(R.id.mList_videos);
         searchAnyCB = layoutView.findViewById(R.id.searchAnyCB);
         if (searchAnyCB.isChecked()) {
-            searchQuery = "any";
+            searchQueryType = "any";
         } else {
-            searchQuery = "channel";
+            searchQueryType = "channel";
         }
         searchAnyCB.setOnCheckedChangeListener(this);
 
@@ -106,6 +110,10 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
         mProgressDialog = new ProgressDialog(this);
         mProgressDialog.setTitle("Searching...");
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        loadingProgressBar = findViewById(R.id.loading_progress_bar);
+        errorPanelRoot = findViewById(R.id.error_panel);
+        errorButtonRetry = findViewById(R.id.error_button_retry);
+        errorTextView = findViewById(R.id.error_message_view);
 
         SearchView searchView = (SearchView) findViewById(R.id.searchView);
         searchView.setQuery("", true);
@@ -118,22 +126,31 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                 return true;
             }
         });
-
+        errorButtonRetry.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                refreshQuery();
+            }
+        });
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
+
                 queryStr = query;
                 //setting progress message so that users can understand what is happening
-                mProgressDialog.setMessage("Finding videos for " + query.trim());
-                search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + query + "&type=" + searchQuery + "&maxResults=10&key="
+                mProgressDialog.setMessage("Finding videos for " + queryStr.trim());
+                search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + queryStr + "&type=" + searchQueryType + "&maxResults=10&key="
                         + ConstURL.GOOGLE_YOUTUBE_API_KEY;
-                if (!query.isEmpty() && search_type != null) {
-                    mProgressDialog.show();
+                refreshQuery();
+               /* if (!query.isEmpty() && search_type != null) {
+                    if(mProgressDialog!=null&&!mProgressDialog.isShowing()) {
+                        mProgressDialog.show();
+                    }
                     mListData.clear();
                     getSearchListFromServer(search_url);
                 } else {
                     Toast.makeText(SearchActivity.this, "Select request Type", Toast.LENGTH_SHORT).show();
-                }
+                }*/
 
                 //getting instance of the keyboard or any other input from which user types
                 InputMethodManager imm = (InputMethodManager) SearchActivity.this.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -173,12 +190,39 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
 
     }
 
+    private void refreshQuery() {
+        ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
+        if (connectionDetector.isConnectingToInternet()) {
+            errorPanelRoot.setVisibility(View.INVISIBLE);
+
+            mProgressDialog.setMessage("Finding videos for " + queryStr.trim());
+            search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + queryStr + "&type=" + searchQueryType + "&maxResults=10&key="
+                    + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+            if (!queryStr.isEmpty() && search_type != null) {
+                if (mProgressDialog != null && !mProgressDialog.isShowing()) {
+                    mProgressDialog.show();
+                }
+                mListData.clear();
+                getSearchListFromServer(search_url);
+            } else {
+                Toast.makeText(SearchActivity.this, "Select request Type", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            if(mListData.size()>0) {
+                mListData.clear();
+                adapter.notifyDataSetChanged();
+            }
+            errorPanelRoot.setVisibility(View.VISIBLE);
+            errorTextView.setText("No Network");
+        }
+    }
+
     private void nextPageToken(String pageToken) {
-        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&q=" + queryStr + "&pageToken=" + pageToken + "&type=" + searchQuery +
+        System.out.println("pageToken =************************ " + pageToken);
+        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&q=" + queryStr + "&pageToken=" + pageToken + "&type=" + searchQueryType +
                 "&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
         getEndlessListFromServer(CHANNEL_GET_URL);
-
-
+        pageToken = null;
     }
 
     private void initList(ArrayList<YoutubeDataModel> mListData) {
@@ -191,7 +235,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                 YoutubeDataModel youtubeDataModel = item;
                 if (youtubeDataModel.getKind().equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
 //                    &&requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.channelKey))
-                    intent = new Intent(SearchActivity.this, ChannelPlaylistActivity.class);
+                    intent = new Intent(SearchActivity.this, ChannelPlaylistActivityWithoutAnim.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
                     startActivity(intent);
 //                    requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.videoKey))
@@ -216,21 +260,23 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
 
     private void getSearchListFromServer(String url) {
         hmMainListData.clear();
-        System.out.println("CHANNLE_GET_URL*************= " + url);
+        System.out.println("Search request Channel or Any*************= " + url);
         //Retrieving response from the server
         JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
 
-                        System.out.println("response Channel Api = " + response);
-                        hmMainListData = parseTrendingVideoListFromResponse(response);
+                        System.out.println("response Channel or Any Api = " + response);
+                        hmMainListData = parseVideoListFromResponse(response);
                         if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
-                            getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)));
-                        }if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
-                            getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)));
-                        }if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
-                            getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)));
+                            getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)), true);
+                        }
+                        if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
+                            getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)), true);
+                        }
+                        if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
+                            getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)), true);
                         }
 //                        hmMainListData.putAll(hmVideosStatisticsListData);
 //                        hmMainListData.putAll(hmChannelsStatisticsListData);
@@ -239,8 +285,6 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                         if (mProgressDialog.isShowing()) {
                             mProgressDialog.dismiss();
                         }
-                        mListData.addAll(new ArrayList<YoutubeDataModel>(hmMainListData.values()));
-                        initList(mListData);
                     }
 
                 }, new Response.ErrorListener() {
@@ -265,7 +309,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
 
     private void getEndlessListFromServer(String url) {
         hmTempListData.clear();
-        System.out.println("CHANNLE_GET_URL*************= " + url);
+        System.out.println("Request EndlessList*************= " + url);
         //Retrieving response from the server
         JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
                 new Response.Listener<JSONObject>() {
@@ -274,65 +318,25 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                         if (mProgressDialog.isShowing()) {
                             mProgressDialog.dismiss();
                         }
-                        System.out.println("response Channel Api = " + response);
+                        System.out.println("response EndlessList Api *****************= " + response);
                         ArrayList<YoutubeDataModel> nextTokenArrayList = new ArrayList<>();
-                        hmTempListData = parseTrendingVideoListFromResponse(response);
+                        hmTempListData = parseVideoListFromResponse(response);
                         hmMainListData.putAll(hmTempListData);
                         if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
-                            getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)));
-                        }if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
-                            getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)));
-                        }if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
-                            getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)));
+                            getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)), false);
+                        }
+                        if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
+                            getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)), false);
+                        }
+                        if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
+                            getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)), false);
                         }
 //                        initList(mListData);
 //                        System.out.println("Size=" + nextTokenArrayList.size() + "nextTokenArrayList =" + nextTokenArrayList);
-                        mListData.addAll(new ArrayList<YoutubeDataModel>(hmTempListData.values()));
-                        System.out.println("Size=" + mListData.size() + "mListData = " + mListData);
-//                        initList(mListData);
-                        adapter.notifyItemInserted(mListData.size());
-                    }
-
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                if (mProgressDialog.isShowing()) {
-                    mProgressDialog.dismiss();
-                }
-                Toast.makeText(SearchActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
-            }
-        }) {
-
-            //This is for Headers If You Needed
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Content-Type", "text/plain");
-                return params;
-            }
-        };
-        AppController.getInstance().addToRequestQueue(js, null);
-    }
-
-    private void getStatisticsResponse(String url) {
-        System.out.println("url = " + url);
-        hmParsedStatisticsResponse.clear();
-        JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        if (mProgressDialog.isShowing()) {
-                            mProgressDialog.dismiss();
-                        }
-                        System.out.println("getStatisticsResponse Api = " + response);
-                        hmParsedStatisticsResponse = parseTrendingStatisticsResponse(response);
-//                        initList(mListData);
-//                        System.out.println("Size=" + nextTokenArrayList.size() + "nextTokenArrayList =" + nextTokenArrayList);
-//                        mListData.addAll(nextTokenArrayList);
+//                        mListData.addAll(new ArrayList<YoutubeDataModel>(hmTempListData.values()));
 //                        System.out.println("Size=" + mListData.size() + "mListData = " + mListData);
-//                        adapter.notifyItemInserted(mListData.size());
+//                        initList(mListData);
                     }
-
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
@@ -354,7 +358,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
         AppController.getInstance().addToRequestQueue(js, null);
     }
 
-    public HashMap<String, YoutubeDataModel> parseTrendingVideoListFromResponse(JSONObject jsonObject) {
+    public HashMap<String, YoutubeDataModel> parseVideoListFromResponse(JSONObject jsonObject) {
 
         HashMap<String, YoutubeDataModel> hmList = new HashMap<>();
         videosIdArrayList.clear();
@@ -377,6 +381,8 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                                 YoutubeDataModel youtubeObject = new YoutubeDataModel();
                                 JSONObject json1 = json.getJSONObject("id");
                                 kind = json1.getString("kind");
+                                JSONObject jsonSnippet = json.getJSONObject("snippet");
+
                                 if (kind.equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
                                     channelId = json1.getString("channelId");
                                     channelIdArrayList.add(channelId);
@@ -389,17 +395,20 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                                     video_id = json1.getString("videoId");
                                     videosIdArrayList.add(video_id);
                                     hashMapKey = video_id;
+                                    channelId = jsonSnippet.getString("channelId");
+                                    youtubeObject.setChannel_id(channelId);
                                     System.out.println("video_id = " + video_id);
                                 }
                                 if (kind.equalsIgnoreCase(ConstURL.PLAYLIST_TYPE)) {
                                     playListID = json1.getString("playlistId");
                                     playListIdArrayList.add(playListID);
                                     hashMapKey = playListID;
+                                    channelId = jsonSnippet.getString("channelId");
+                                    youtubeObject.setChannel_id(channelId);
                                     System.out.println("PlayListID = " + playListID);
                                     youtubeObject.setPlayList_id(playListID);
                                 }
 
-                                JSONObject jsonSnippet = json.getJSONObject("snippet");
                                 String title = jsonSnippet.getString("title");
 
                                 String description = jsonSnippet.getString("description");
@@ -431,7 +440,55 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
         return hmList;
     }
 
-    private HashMap<String, YoutubeDataModel> parseTrendingStatisticsResponse(JSONObject jsonObject) {
+    private void getStatisticsResponse(String url, Boolean firstInitList) {
+        System.out.println("Request_Statistics_URL=****************** " + url);
+        JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        if (mProgressDialog.isShowing()) {
+                            mProgressDialog.dismiss();
+                        }
+                        System.out.println("get Statistics Response Api = " + response);
+                        parseTrendingStatisticsResponse(response);
+                        if (firstInitList) {
+                            mListData.addAll(new ArrayList<YoutubeDataModel>(hmMainListData.values()));
+                            initList(mListData);
+                        } else {
+                            mListData.addAll(new ArrayList<YoutubeDataModel>(hmTempListData.values()));
+                            adapter.notifyItemInserted(mListData.size());
+                        }
+
+
+//                        initList(mListData);
+//                        System.out.println("Size=" + nextTokenArrayList.size() + "nextTokenArrayList =" + nextTokenArrayList);
+//                        mListData.addAll(nextTokenArrayList);
+//                        System.out.println("Size=" + mListData.size() + "mListData = " + mListData);
+//                        adapter.notifyItemInserted(mListData.size());
+                    }
+
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                if (mProgressDialog.isShowing()) {
+                    mProgressDialog.dismiss();
+                }
+                Toast.makeText(SearchActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+            }
+        }) {
+
+            //This is for Headers If You Needed
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "text/plain");
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(js, null);
+    }
+
+    private void parseTrendingStatisticsResponse(JSONObject jsonObject) {
         HashMap<String, YoutubeDataModel> hmList = new HashMap<String, YoutubeDataModel>();
         if (jsonObject.has("items")) {
             try {
@@ -448,28 +505,39 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                             hashMapKey = channelId;
                             hmMainListData.get(hashMapKey).setChannel_id(channelId);
                             System.out.println("channelId = " + channelId);
-                            hmMainListData.get(hashMapKey).setViewCount(json.getJSONObject("statistics").getString("viewCount"));
-                            hmMainListData.get(hashMapKey).setVideoCount(json.getJSONObject("statistics").getString("videoCount"));
-                            hmMainListData.get(hashMapKey).setCommentCount(json.getJSONObject("statistics").getString("commentCount"));
-                            hmMainListData.get(hashMapKey).setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("videoCount"))
+                                hmMainListData.get(hashMapKey).setVideoCount(json.getJSONObject("statistics").getString("videoCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("viewCount"))
+                                hmMainListData.get(hashMapKey).setViewCount(json.getJSONObject("statistics").getString("viewCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("subscriberCount"))
+                                hmMainListData.get(hashMapKey).setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
                         }
                         if (kind.equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
                             video_id = json.getString("id");
                             hashMapKey = video_id;
                             hmMainListData.get(hashMapKey).setVideo_id(video_id);
-                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("contentDetails").getString("duration"));
-                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("viewCount"));
-                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("likeCount"));
-                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("dislikeCount"));
-                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("favoriteCount"));
-                            hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("statistics").getString("commentCount"));
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("duration"))
+                                hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("contentDetails").getString("duration"));
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("subscriberCount"))
+                                hmMainListData.get(hashMapKey).setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("viewCount"))
+                                hmMainListData.get(hashMapKey).setViewCount(json.getJSONObject("statistics").getString("viewCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("likeCount"))
+                                hmMainListData.get(hashMapKey).setLikeCount(json.getJSONObject("statistics").getString("likeCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("dislikeCount"))
+                                hmMainListData.get(hashMapKey).setDislikeCount(json.getJSONObject("statistics").getString("dislikeCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("favoriteCount"))
+                                hmMainListData.get(hashMapKey).setFavoriteCount(json.getJSONObject("statistics").getString("favoriteCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("commentCount"))
+                                hmMainListData.get(hashMapKey).setCommentCount(json.getJSONObject("statistics").getString("commentCount"));
                             System.out.println("video_id = " + video_id);
                         }
                         if (kind.equalsIgnoreCase(ConstURL.PLAYLIST_TYPE)) {
                             playListID = json.getString("id");
                             hashMapKey = playListID;
                             hmMainListData.get(hashMapKey).setPlayList_id(playListID);
-                            hmMainListData.get(hashMapKey).setVideoCount(json.getJSONObject("contentDetails").getString("itemCount"));
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("itemCount"))
+                                hmMainListData.get(hashMapKey).setVideoCount(json.getJSONObject("contentDetails").getString("itemCount"));
                             System.out.println("PlayListID = " + playListID);
                         }
                     }
@@ -479,7 +547,6 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
             }
 //            adapter.notifyDataSetChanged();
         }
-        return hmList;
     }
 
     private String channelIdStatisticsQuery(String ids) {
@@ -538,9 +605,9 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
         switch (compoundButton.getId()) {
             case R.id.searchAnyCB:
                 if (checkSearch) {
-                    searchQuery = "any";
+                    searchQueryType = "any";
                 } else {
-                    searchQuery = "channel";
+                    searchQueryType = "channel";
                 }
                 break;
         }

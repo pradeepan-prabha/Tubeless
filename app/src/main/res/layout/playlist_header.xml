@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:background="@color/black_contrast_background_color"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/playlist_title_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginRight="8dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textSize="@dimen/playlist_detail_title_text_size"
+        tools:text="Mix musics #23 title Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tristique vitae sem vitae blanditLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum" />
+
+    <RelativeLayout
+        android:id="@+id/playlist_meta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/playlist_title_view">
+
+        <RelativeLayout
+            android:id="@+id/uploader_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/playlist_detail_uploader_layout_height"
+            android:layout_marginLeft="4dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginRight="6dp"
+            android:layout_marginBottom="6dp"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="left|center_vertical"
+            android:padding="2dp"
+            tools:ignore="RtlHardcoded"
+            tools:visibility="visible">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/uploader_avatar_view"
+                android:layout_width="@dimen/playlist_detail_uploader_image_size"
+                android:layout_height="@dimen/playlist_detail_uploader_image_size"
+                android:layout_alignParentLeft="true"
+                android:layout_margin="1dp"
+                android:src="@drawable/buddy"
+                app:civ_border_color="#ffffff"
+                app:civ_border_width="1dp" />
+
+            <TextView
+                android:id="@+id/uploader_name"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="4dp"
+                android:layout_toRightOf="@+id/uploader_avatar_view"
+                android:ellipsize="end"
+                android:gravity="left|center_vertical"
+                android:maxLines="1"
+                android:textSize="@dimen/playlist_detail_subtext_size"
+                tools:ignore="RtlHardcoded"
+                tools:text="Typical uploader name" />
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/uploader_layout"
+            android:layout_alignBottom="@+id/uploader_layout"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/playlist_stream_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginRight="6dp"
+                android:ellipsize="end"
+                android:gravity="right|center_vertical"
+                android:maxLines="1"
+                android:textSize="@dimen/playlist_detail_subtext_size"
+                tools:ignore="RtlHardcoded"
+                tools:text="234 videos" />
+
+            <ImageButton
+                android:id="@+id/img_bookmark"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="bottom|right"
+                android:layout_marginRight="8dp"
+                android:background="@color/transparent_background_color"
+                android:gravity="left|center_vertical"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_bookmarks_outline"
+                android:visibility="visible"
+                tools:ignore="RtlHardcoded"
+                android:contentDescription="TODO" />
+        </LinearLayout>
+
+    </RelativeLayout>
+</RelativeLayout>

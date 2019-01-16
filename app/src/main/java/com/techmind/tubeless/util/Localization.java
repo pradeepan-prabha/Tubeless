@@ -171,26 +171,15 @@ public class Localization {
         return context.getResources().getQuantityString(pluralId, safeCount, formattedCount);
     }
 
-    public static String getDurationString(long duration) {
-        if (duration < 0) {
-            duration = 0;
+    public static String getDurationString(String timeStr) {
+        String result="";
+        if (timeStr!=null&&!timeStr.isEmpty()) {
+            result = timeStr.replace("PT", "").replace("H", ":").replace("M", ":").replace("S", "");
+            String arr[] = result.split(":");
+            System.out.println("duration=" +result);
+            return result;
         }
-        String output;
-        long days = duration / (24 * 60 * 60L); /* greater than a day */
-        duration %= (24 * 60 * 60L);
-        long hours = duration / (60 * 60L); /* greater than an hour */
-        duration %= (60 * 60L);
-        long minutes = duration / 60L;
-        long seconds = duration % 60L;
-
-        //handle days
-        if (days > 0) {
-            output = String.format(Locale.US, "%d:%02d:%02d:%02d", days, hours, minutes, seconds);
-        } else if (hours > 0) {
-            output = String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds);
-        } else {
-            output = String.format(Locale.US, "%d:%02d", minutes, seconds);
-        }
-        return output;
+        return result;
     }
+
 }

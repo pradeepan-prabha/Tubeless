@@ -1,8 +1,11 @@
 package com.techmind.tubeless.adapters;
 
+import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,20 +21,24 @@ import com.techmind.tubeless.util.Localization;
 
 import java.util.ArrayList;
 
+import static com.techmind.tubeless.util.Localization.localizeDate;
+
 /**
  * Created by mdmunirhossain on 12/18/17.
  */
 
 public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    private Activity activity;
     private ArrayList<YoutubeDataModel> dataSet;
     private Context mContext = null;
     private final OnItemClickListener listener;
 
 
-    public MultiViewAdapter(Context mContext, ArrayList<YoutubeDataModel> dataSet, RecyclerView recyclerView, OnItemClickListener listener) {
+    public MultiViewAdapter(Activity mContext, ArrayList<YoutubeDataModel> dataSet, RecyclerView recyclerView, OnItemClickListener listener) {
         this.dataSet = dataSet;
         this.mContext = mContext;
+        this.activity = mContext;
         this.listener = listener;
 
     }
@@ -90,7 +97,7 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private void setChannelHolderUI(RecyclerView.ViewHolder holder, YoutubeDataModel object, int position) {
         ((ChannelViewHolder) holder).textViewTitle.setText(object.getTitle());
         ((ChannelViewHolder) holder).itemUploaderView.setText(object.getChannelTitle());
-        ((ChannelViewHolder) holder).detail_upload_date_view.setText(Localization.localizeDate(mContext, object.getPublishedAt()));
+        ((ChannelViewHolder) holder).detail_upload_date_view.setText(getDetailViewsSub(object));
         ((ChannelViewHolder) holder).bind(dataSet.get(position), listener);
         //TODO: image will be downloaded from url
         Picasso.get().load(object.getThumbnailMedium()).into(((ChannelViewHolder) holder).ImageThumb);
@@ -100,6 +107,7 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         ((PlaylistViewHolder) holder).textViewTitle.setText(object.getTitle());
         ((PlaylistViewHolder) holder).itemStreamCountView.setText(object.getVideoCount());
         ((PlaylistViewHolder) holder).itemUploaderView.setText(object.getChannelTitle());
+        ((PlaylistViewHolder) holder).itemPlaylistCount.setText(getDetailVideosCount(object));
         ((PlaylistViewHolder) holder).bind(dataSet.get(position), listener);
         //TODO: image will be downloaded from url
         Picasso.get().load(object.getThumbnailMedium()).into(((PlaylistViewHolder) holder).ImageThumb);
@@ -108,10 +116,37 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private void setVideoHolderUI(RecyclerView.ViewHolder holder, YoutubeDataModel object, int position) {
         ((VideosViewHolder) holder).textViewTitle.setText(object.getTitle());
         ((VideosViewHolder) holder).detail_description_view.setText(object.getChannelTitle());
-        ((VideosViewHolder) holder).detail_upload_date_view.setText(Localization.localizeDate(mContext, object.getPublishedAt()));
+        ((VideosViewHolder) holder).detail_upload_date_view.setText(getStreamInfoDetailLine(object));
+        if (!object.getDuration().isEmpty()) {
+            ((VideosViewHolder) holder).detail_duration_view.setText(Localization.getDurationString(object.getDuration()));
+            ((VideosViewHolder) holder).detail_duration_view.setBackgroundColor(ContextCompat.getColor(mContext,
+                    R.color.duration_background_color));
+            ((VideosViewHolder) holder).detail_duration_view.setVisibility(View.VISIBLE);
+        }
+//               if (item.duration > 0) {
+//            ((VideosViewHolder) holder).detail_duration_view.setText(Localization.getDurationString(item.duration));
+//             ((VideosViewHolder) holder).detail_duration_view.setBackgroundColor(ContextCompat.getColor(itemBuilder.getContext(),
+//                    R.color.duration_background_color));
+//            itemDurationView.setVisibility(View.VISIBLE);
+//        } else {
+//            itemDurationView.setVisibility(View.GONE);
+//        }
+//        System.out.println("Localization.getDurationString(checkEmptyStr(object.getDuration())) = " + Localization.getDurationString(checkEmptyStr(object.getDuration())));
         ((VideosViewHolder) holder).bind(dataSet.get(position), listener);
         //TODO: image will be downloaded from url
         Picasso.get().load(object.getThumbnailMedium()).into(((VideosViewHolder) holder).ImageThumb);
+    }
+
+        private long checkEmptyStr(String duration) {
+//       if (item.duration > 0) {
+//            itemDurationView.setText(Localization.getDurationString(item.duration));
+//            itemDurationView.setBackgroundColor(ContextCompat.getColor(itemBuilder.getContext(),
+//                    R.color.duration_background_color));
+//            itemDurationView.setVisibility(View.VISIBLE);
+//        } else {
+//            itemDurationView.setVisibility(View.GONE);
+//        }
+        return 0;
     }
 
     @Override
@@ -122,6 +157,7 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     public static class VideosViewHolder extends RecyclerView.ViewHolder {
         TextView textViewTitle;
         TextView detail_description_view;
+        TextView detail_duration_view;
         TextView detail_upload_date_view;
         ImageView ImageThumb;
 
@@ -130,6 +166,7 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             this.textViewTitle = (TextView) itemView.findViewById(R.id.itemTitleView);
             this.detail_description_view = (TextView) itemView.findViewById(R.id.itemUploaderView);
             this.detail_upload_date_view = (TextView) itemView.findViewById(R.id.itemAdditionalDetails);
+            this.detail_duration_view = (TextView) itemView.findViewById(R.id.detail_duration_view);
             this.ImageThumb = (ImageView) itemView.findViewById(R.id.itemThumbnailView);
 
         }
@@ -148,6 +185,7 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         TextView textViewTitle;
         TextView itemUploaderView;
         TextView itemStreamCountView;
+        TextView itemPlaylistCount;
         ImageView ImageThumb;
 
         public PlaylistViewHolder(View itemView) {
@@ -155,6 +193,7 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             this.textViewTitle = (TextView) itemView.findViewById(R.id.itemTitleView);
             this.itemUploaderView = (TextView) itemView.findViewById(R.id.itemUploaderView);
             this.itemStreamCountView = (TextView) itemView.findViewById(R.id.itemStreamCountView);
+            this.itemPlaylistCount = (TextView) itemView.findViewById(R.id.itemPlaylistCount);
             this.ImageThumb = (ImageView) itemView.findViewById(R.id.itemThumbnailView);
 
         }
@@ -193,4 +232,59 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             });
         }
     }
+    private String getStreamInfoDetailLine(final YoutubeDataModel infoItem) {
+        String viewsAndDate = "";
+        try
+        {
+        if (!infoItem.getViewCount().isEmpty()) {
+            if (Integer.parseInt(infoItem.getViewCount()) >= 0) {
+                viewsAndDate = Localization.shortViewCount(activity, Integer.parseInt(infoItem.getViewCount()));
+            }}
+            if (!TextUtils.isEmpty(infoItem.getPublishedAt())) {
+                if (viewsAndDate.isEmpty()) {
+                    viewsAndDate = localizeDate(mContext,infoItem.getPublishedAt());
+                } else {
+                    viewsAndDate += " • " + localizeDate(mContext,infoItem.getPublishedAt());
+                }
+
+        }
+        }catch(NumberFormatException ex){ // handle your exception
+            System.out.println("NumberFormatException ="+ex);
+        }
+        return viewsAndDate;
+    }
+    private String getDetailViewsSub(final YoutubeDataModel item) {
+        String details = "";
+        if (!item.getSubscriberCount().isEmpty()&&Integer.parseInt(item.getSubscriberCount()) >= 0) {
+            details += Localization.shortSubscriberCount(activity,
+                    Integer.parseInt(item.getSubscriberCount()));
+        }
+        if (!item.getVideoCount().isEmpty()&&Integer.parseInt(item.getVideoCount() )>= 0) {
+            String formattedVideoAmount = Localization.localizeStreamCount(activity,
+                    Integer.parseInt(item.getVideoCount()));
+
+            if (!details.isEmpty()) {
+                details += " • " + formattedVideoAmount;
+            } else {
+                details = formattedVideoAmount;
+            }
+        }
+
+        return details;
+    } private String getDetailVideosCount(final YoutubeDataModel item) {
+        String details = "";
+        if (!item.getVideoCount().isEmpty()&&Integer.parseInt(item.getVideoCount() )>= 0) {
+            String formattedVideoAmount = Localization.localizeStreamCount(activity,
+                    Integer.parseInt(item.getVideoCount()));
+
+            if (!details.isEmpty()) {
+                details += " • " + formattedVideoAmount;
+            } else {
+                details = formattedVideoAmount;
+            }
+        }
+
+        return details;
+    }
+
 }

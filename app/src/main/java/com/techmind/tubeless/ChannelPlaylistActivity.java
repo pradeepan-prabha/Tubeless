@@ -46,6 +46,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 import static com.techmind.tubeless.config.AppController.showToast;
 import static com.techmind.tubeless.config.ConstURL.CHANNEL_TYPE;
 import static com.techmind.tubeless.config.ConstURL.GOOGLE_YOUTUBE_API_KEY;
+import static com.techmind.tubeless.config.ConstURL.PLAYLIST_TYPE;
 
 
 public class ChannelPlaylistActivity extends AppCompatActivity {
@@ -126,7 +127,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
         appBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
             @Override
             public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
-                Log.d(ChannelPlaylistActivity.class.getSimpleName(), "onOffsetChanged: verticalOffset: " + verticalOffset);
+                Log.d(ChannelPlaylistActivityWithoutAnim.class.getSimpleName(), "onOffsetChanged: verticalOffset: " + verticalOffset);
 
                 //  Vertical offset == 0    indicates appBar is fully expanded.
                 if (Math.abs(verticalOffset) > 200) {
@@ -162,6 +163,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                 // Add sample post to the database
 //                System.out.println("youtubeDataModel.getVideo_id()%%%%% = " + youtubeDataModel.getChannel_id());
                 if (!bookmarkedId) {
+                    youtubeDataModel.setKind(PLAYLIST_TYPE);
                     if (PostsDatabaseHelper.getInstance(view.getContext()).addPost(youtubeDataModel, CHANNEL_TYPE)) {
                         showToast("Channel is Bookmarked successfully");
                         checkBookmarkTag();
@@ -211,12 +213,14 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                     if (json.has("id")) {
                         JSONObject jsonID = json.getJSONObject("id");
                         String video_id = "";
-                        if (jsonID.has("videoId")) {
-                            video_id = jsonID.getString("videoId");
-                        }
                         if (jsonID.has("kind")) {
                             if (jsonID.getString("kind").equals("youtube#video")) {
                                 YoutubeDataModel youtubeObject = new YoutubeDataModel();
+                                if (jsonID.has("kind")) {
+                                    youtubeObject.setKind(jsonID.getString("kind"));
+                                } if (jsonID.has("videoId")) {
+                                    video_id = jsonID.getString("videoId");
+                                }
                                 JSONObject jsonSnippet = json.getJSONObject("snippet");
                                 String title = jsonSnippet.getString("title");
                                 String description = jsonSnippet.getString("description");
@@ -294,7 +298,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
                             System.out.println("getBannerChannelListFromServerResponse = " + response);
                             JSONObject thumbnailArray = (JSONObject) response.getJSONArray("items").get(0);
                             if (thumbnailArray.has("brandingSettings")) {
-                                String thumbnail = thumbnailArray.getJSONObject("brandingSettings").getJSONObject("image").getString("bannerMobileExtraHdImageUrl");
+                                String thumbnail = thumbnailArray.getJSONObject("brandingSettings").getJSONObject("image").getString("bannerMobileMediumHdImageUrl");
 
 //                            String thumbnail = response.getJSONObject("items");
                                 Picasso.get()
@@ -368,12 +372,17 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
         adapter = new VideoPostAdapter(this, mListData, mList_videos, new OnItemClickListener() {
             @Override
             public void onItemClick(YoutubeDataModel item) {
+                /*
                 YoutubeDataModel youtubeDataModel = item;
                 Intent intent = new Intent(ChannelPlaylistActivity.this, VideoPlayerActivity.class);
                 intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
                 startActivity(intent);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
                     overridePendingTransition(R.animator.right_in, R.animator.left_out);
+                }
+                */
+                if (item != null && !item.getVideo_id().isEmpty()) {
+                    getStatisticsResponse(videosIdStatisticsQuery(item.getVideo_id()), item);
                 }
             }
         });
@@ -427,5 +436,91 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
             this.overridePendingTransition(R.animator.left_to_right, R.animator.right_to_left);
         }
         super.onBackPressed();
+    }
+    private String videosIdStatisticsQuery(String ids) {
+        return "https:///www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+    }
+
+    private void getStatisticsResponse(String url, YoutubeDataModel item) {
+        System.out.println("url = " + url);
+        JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, new JSONObject(),
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        System.out.println("getStatisticsResponse Api = " + response);
+                        parseTrendingStatisticsResponse(response, item);
+                        Intent intent;
+                        if (item.getKind().equalsIgnoreCase("youtube#video")) {
+                            intent = new Intent(getApplicationContext(), VideoPlayerActivity.class);
+                            intent.putExtra(YoutubeDataModel.class.toString(), item);
+                            intent.putExtra("activity", "VideoPlayerActivity");
+                            startActivity(intent);
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+                            overridePendingTransition(R.animator.right_in, R.animator.left_out);
+                        }
+//                        initList(mListData);
+//                        System.out.println("Size=" + nextTokenArrayList.size() + "nextTokenArrayList =" + nextTokenArrayList);
+//                        mListData.addAll(nextTokenArrayList);
+//                        System.out.println("Size=" + mListData.size() + "mListData = " + mListData);
+//                        adapter.notifyItemInserted(mListData.size());
+                    }
+
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(ChannelPlaylistActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+            }
+        }) {
+
+            //This is for Headers If You Needed
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "text/plain");
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(js, null);
+    }
+    private void parseTrendingStatisticsResponse(JSONObject jsonObject, YoutubeDataModel item) {
+        HashMap<String, YoutubeDataModel> hmList = new HashMap<String, YoutubeDataModel>();
+        if (jsonObject.has("items")) {
+            try {
+                JSONArray jsonArray = jsonObject.getJSONArray("items");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject json = jsonArray.getJSONObject(i);
+                    String video_id = "";
+                    String hashMapKey = "";
+//                    YoutubeDataModel youtubeObject = new YoutubeDataModel();
+                    String kind = json.getString("kind");
+                    if (item.getVideo_id().equals(json.getString("id"))) {
+                        if (kind.equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
+                            video_id = json.getString("id");
+                            hashMapKey = video_id;
+                            item.setVideo_id(video_id);
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("duration"))
+                                item.setDuration(json.getJSONObject("contentDetails").getString("duration"));
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("subscriberCount"))
+                                item.setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("viewCount"))
+                                item.setViewCount(json.getJSONObject("statistics").getString("viewCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("likeCount"))
+                                item.setLikeCount(json.getJSONObject("statistics").getString("likeCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("dislikeCount"))
+                                item.setDislikeCount(json.getJSONObject("statistics").getString("dislikeCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("favoriteCount"))
+                                item.setFavoriteCount(json.getJSONObject("statistics").getString("favoriteCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("commentCount"))
+                                item.setCommentCount(json.getJSONObject("statistics").getString("commentCount"));
+                            System.out.println("video_id = " + video_id);
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+//            adapter.notifyDataSetChanged();
+        }
     }
 }

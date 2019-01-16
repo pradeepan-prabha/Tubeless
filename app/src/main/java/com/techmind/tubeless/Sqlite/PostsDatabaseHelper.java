@@ -31,6 +31,7 @@ public class PostsDatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_POST_ID = "id";
     private static final String KEY_BM_TYPE = "bookMarkType";
     private static final String KEY_BM_TYPE_ID = "bookMarkTypeID";
+    private static final String KEY_BM_CHANNEL_TYPE_ID = "bookMarkChannelTypeID";
     private static final String KEY_BM_THUMBNAIL_HIGH_URL = "bookMarkImgThumbnailHighUrl";
     private static final String KEY_BM_THUMBNAIL_MEDIUM_URL = "bookMarkImgThumbnailMediumUrl";
     private static final String KEY_BM_THUMBNAIL_DEFAULT_URL = "bookMarkImgThumbnailDefaultUrl";
@@ -47,6 +48,8 @@ public class PostsDatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_BM_VIDEO_COUNT = "bookMarkVideoCount";
     private static final String KEY_BM_PLAYLIST_COUNT = "bookMarkPlayListCount";
     private static final String KEY_BM_DURATION_COUNT = "bookMarkDurationCount";
+    private static final String CHANNEL_BANNER_IMAGE_URL = "ChannelBannerImageUrl";
+    private static final String UPLOADER_AVATAR_URL = "uploaderAvatarUrl";
     // User Table Columns
 //    private static final String KEY_USER_ID = "id";
 //    private static final String KEY_USER_NAME = "userName";
@@ -88,8 +91,8 @@ public class PostsDatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         String CREATE_BOOKMARK_TABLE = "CREATE TABLE " + TABLE_BOOKMARK + "(" +
-                KEY_POST_ID + " INTEGER PRIMARY KEY," + KEY_BM_TYPE + " TEXT," + KEY_BM_TITLE + " TEXT," + KEY_BM_TYPE_ID +
-                " TEXT," + KEY_BM_THUMBNAIL_HIGH_URL + " TEXT ," + KEY_BM_THUMBNAIL_MEDIUM_URL + " TEXT ," +
+                KEY_POST_ID + " INTEGER PRIMARY KEY," + KEY_BM_TYPE + " TEXT," + KEY_BM_CHANNEL_TYPE_ID + " TEXT," + KEY_BM_TITLE + " TEXT," + KEY_BM_TYPE_ID +
+                " TEXT," + KEY_BM_THUMBNAIL_HIGH_URL + " TEXT ," + KEY_BM_THUMBNAIL_MEDIUM_URL + " TEXT ,"+ UPLOADER_AVATAR_URL + " TEXT ,"+ CHANNEL_BANNER_IMAGE_URL + " TEXT ," +
                 KEY_BM_THUMBNAIL_DEFAULT_URL + " TEXT ," + KEY_BM_PUBLISHED_AT + " TEXT ,"
                 + KEY_BM_VIEW_COUNT + " TEXT ," + KEY_BM_LIKE_COUNT + " TEXT ," + KEY_BM_DISLIKE_COUNT + " TEXT " +
                 "," + KEY_BM_FAVORITE_COUNT + " TEXT ," + KEY_BM_CHANNEL_TITLE_AT + " TEXT ,"
@@ -125,10 +128,11 @@ public class PostsDatabaseHelper extends SQLiteOpenHelper {
                 values.put(KEY_BM_TYPE_ID, youtubeDataModel.getChannel_id());
             } else if (type.equalsIgnoreCase(VIDEOS_TYPE)) {
                 values.put(KEY_BM_TYPE_ID, youtubeDataModel.getVideo_id());
+                values.put(KEY_BM_CHANNEL_TYPE_ID, youtubeDataModel.getChannel_id());
             } else if (type.equalsIgnoreCase(PLAYLIST_TYPE)) {
                 values.put(KEY_BM_TYPE_ID, youtubeDataModel.getPlayList_id());
+                values.put(KEY_BM_CHANNEL_TYPE_ID, youtubeDataModel.getChannel_id());
             }
-            System.out.println("values = " + values);
             values.put(KEY_BM_VIEW_COUNT, youtubeDataModel.getViewCount());
             values.put(KEY_BM_LIKE_COUNT, youtubeDataModel.getLikeCount());
             values.put(KEY_BM_DISLIKE_COUNT, youtubeDataModel.getDislikeCount());
@@ -146,8 +150,11 @@ public class PostsDatabaseHelper extends SQLiteOpenHelper {
             values.put(KEY_BM_DESCRIPTION, youtubeDataModel.getDescription());
             values.put(KEY_BM_PLAYLIST_COUNT , youtubeDataModel.getPlayListCount());
             values.put(KEY_BM_DURATION_COUNT , youtubeDataModel.getDuration());
+            values.put(UPLOADER_AVATAR_URL , youtubeDataModel.getUploaderAvatarUrl());
+            values.put(CHANNEL_BANNER_IMAGE_URL , youtubeDataModel.getChannelBannerImageUrl());
             db.insert(TABLE_BOOKMARK, null, values);
             System.out.println("*****************Data insert successfully***************");
+            System.out.println("values = " + values);
             insertOrNot = true;
         } catch (Exception e) {
             Log.d(TAG, "Error while trying to add post to database******************" + e);
@@ -223,8 +230,10 @@ public class PostsDatabaseHelper extends SQLiteOpenHelper {
                         youtubeDataModel.setChannel_id(cursor.getString(cursor.getColumnIndex(KEY_BM_TYPE_ID)));
                     } else if (type.equalsIgnoreCase(VIDEOS_TYPE)) {
                         youtubeDataModel.setVideo_id(cursor.getString(cursor.getColumnIndex(KEY_BM_TYPE_ID)));
+                        youtubeDataModel.setChannel_id(cursor.getString(cursor.getColumnIndex(KEY_BM_CHANNEL_TYPE_ID)));
                     } else if (type.equalsIgnoreCase(PLAYLIST_TYPE)) {
                         youtubeDataModel.setPlayList_id(cursor.getString(cursor.getColumnIndex(KEY_BM_TYPE_ID)));
+                        youtubeDataModel.setChannel_id(cursor.getString(cursor.getColumnIndex(KEY_BM_CHANNEL_TYPE_ID)));
                     }
                     youtubeDataModel.setDescription(cursor.getString(cursor.getColumnIndex(KEY_BM_DESCRIPTION)));
                     youtubeDataModel.setKind(cursor.getString(cursor.getColumnIndex(KEY_BM_TYPE)));
@@ -234,15 +243,19 @@ public class PostsDatabaseHelper extends SQLiteOpenHelper {
                     youtubeDataModel.setThumbnailDefault(cursor.getString(cursor.getColumnIndex(KEY_BM_THUMBNAIL_DEFAULT_URL)));
                     youtubeDataModel.setPublishedAt(cursor.getString(cursor.getColumnIndex(KEY_BM_PUBLISHED_AT)));
                     youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_CHANNEL_TITLE_AT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_VIEW_COUNT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_LIKE_COUNT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_DISLIKE_COUNT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_FAVORITE_COUNT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_COMMENT_COUNT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_SUBSCRIBER_COUNT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_VIDEO_COUNT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_PLAYLIST_COUNT)));
-                    youtubeDataModel.setChannelTitle(cursor.getString(cursor.getColumnIndex(KEY_BM_DURATION_COUNT)));
+                    youtubeDataModel.setViewCount(cursor.getString(cursor.getColumnIndex(KEY_BM_VIEW_COUNT)));
+                    youtubeDataModel.setLikeCount(cursor.getString(cursor.getColumnIndex(KEY_BM_LIKE_COUNT)));
+                    youtubeDataModel.setDislikeCount(cursor.getString(cursor.getColumnIndex(KEY_BM_DISLIKE_COUNT)));
+                    youtubeDataModel.setFavoriteCount(cursor.getString(cursor.getColumnIndex(KEY_BM_FAVORITE_COUNT)));
+                    youtubeDataModel.setCommentCount(cursor.getString(cursor.getColumnIndex(KEY_BM_COMMENT_COUNT)));
+                    youtubeDataModel.setSubscriberCount(cursor.getString(cursor.getColumnIndex(KEY_BM_SUBSCRIBER_COUNT)));
+                    youtubeDataModel.setVideoCount(cursor.getString(cursor.getColumnIndex(KEY_BM_VIDEO_COUNT)));
+                    youtubeDataModel.setPlayListCount(cursor.getString(cursor.getColumnIndex(KEY_BM_PLAYLIST_COUNT)));
+                    youtubeDataModel.setDuration(cursor.getString(cursor.getColumnIndex(KEY_BM_DURATION_COUNT)));
+                    youtubeDataModel.setChannelBannerImageUrl(cursor.getString(cursor.getColumnIndex(CHANNEL_BANNER_IMAGE_URL)));
+                    youtubeDataModel.setUploaderAvatarUrl(cursor.getString(cursor.getColumnIndex(UPLOADER_AVATAR_URL)));
+                    System.out.println("cursor values************* = " + cursor);
+                    System.out.println("KEY_BM_VIEW_COUNT************* = " + cursor.getString(cursor.getColumnIndex(KEY_BM_VIEW_COUNT)));
 //                    Post newPost = new Post();
 //                    newPost.text = cursor.getString(cursor.getColumnIndex(KEY_BM_TYPE_ID));
 //                    newPost.user = newUser;
