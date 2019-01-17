@@ -10,55 +10,40 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- LOADING INDICATOR-->
-        <ProgressBar
-            android:id="@+id/loading_progress_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_gravity="center_vertical"
-            android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
-            android:indeterminate="true"
-            android:theme="@style/RedAccent"
-            android:visibility="gone"
-            tools:visibility="visible" />
 
-        <!--ERROR PANEL-->
-        <include
-            android:id="@+id/error_panel"
-            layout="@layout/error_retry"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_gravity="center_vertical"
-            android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
-            android:visibility="gone"
-            tools:visibility="visible" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
             <include layout="@layout/toolbar" />
             <!--    <include layout="@layout/toolbar" />-->
             <android.support.v4.widget.SwipeRefreshLayout
                 android:id="@+id/swipeRefreshLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
+
                 <android.support.v7.widget.RecyclerView
                     android:id="@+id/mList_videos"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </android.support.v4.widget.SwipeRefreshLayout>
 
-            <TextView
-                android:id="@+id/empty_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="Add BookMarks"
-                android:visibility="gone" />
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/empty_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_gravity="center_vertical"
+            android:gravity="center"
+            android:text="@string/noBookMark"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="@string/noBookMark"
+            tools:visibility="visible" />
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab"
@@ -73,7 +58,34 @@
             android:src="@drawable/ic_search"
             app:backgroundTint="@color/yellow"
             app:rippleColor="@color/yellow" />
+        <!-- LOADING INDICATOR-->
+        <ProgressBar
+            android:id="@+id/loading_progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_centerVertical="true"
+            android:layout_gravity="center_vertical"
+            android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
+            android:indeterminate="true"
+            android:theme="@style/RedAccent"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <!--ERROR PANEL-->
+        <include
+            android:id="@+id/error_panel"
+            layout="@layout/error_retry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_centerVertical="true"
+            android:layout_gravity="center_vertical"
+            android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
+            android:visibility="gone"
+            tools:visibility="visible" />
     </RelativeLayout>
+
 
     <android.support.design.widget.NavigationView
         android:id="@+id/nav_view"

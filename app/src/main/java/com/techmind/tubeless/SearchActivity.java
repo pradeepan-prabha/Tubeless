@@ -83,6 +83,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
     private View errorPanelRoot;
     private Button errorButtonRetry;
     private TextView errorTextView;
+    private TextView listErrorMsg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +97,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
         layoutView = LayoutInflater.from(this).inflate(R.layout.fragment_live, mContentFrame, false);
         mList_videos = (RecyclerView) layoutView.findViewById(R.id.mList_videos);
         searchAnyCB = layoutView.findViewById(R.id.searchAnyCB);
+        listErrorMsg = findViewById(R.id.empty_view);
         if (searchAnyCB.isChecked()) {
             searchQueryType = "any";
         } else {
@@ -208,7 +210,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                 Toast.makeText(SearchActivity.this, "Select request Type", Toast.LENGTH_SHORT).show();
             }
         } else {
-            if(mListData.size()>0) {
+            if (mListData.size() > 0) {
                 mListData.clear();
                 adapter.notifyDataSetChanged();
             }
@@ -269,15 +271,21 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
 
                         System.out.println("response Channel or Any Api = " + response);
                         hmMainListData = parseVideoListFromResponse(response);
-                        if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
-                            getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)), true);
+                        if (hmMainListData.size() > 0) {
+                            listErrorMsg.setVisibility(View.GONE);
+                        } else {
+                            listErrorMsg.setVisibility(View.VISIBLE);
                         }
-                        if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
-                            getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)), true);
-                        }
-                        if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
-                            getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)), true);
-                        }
+                            if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
+                                getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)), true);
+                            }
+                            if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
+                                getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)), true);
+                            }
+                            if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
+                                getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)), true);
+                            }
+
 //                        hmMainListData.putAll(hmVideosStatisticsListData);
 //                        hmMainListData.putAll(hmChannelsStatisticsListData);
 //                        hmMainListData.putAll(hmPlayListStatisticsListData);
@@ -454,6 +462,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                         if (firstInitList) {
                             mListData.addAll(new ArrayList<YoutubeDataModel>(hmMainListData.values()));
                             initList(mListData);
+
                         } else {
                             mListData.addAll(new ArrayList<YoutubeDataModel>(hmTempListData.values()));
                             adapter.notifyItemInserted(mListData.size());

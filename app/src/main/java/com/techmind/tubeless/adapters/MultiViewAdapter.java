@@ -237,8 +237,8 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         try
         {
         if (!infoItem.getViewCount().isEmpty()) {
-            if (Integer.parseInt(infoItem.getViewCount()) >= 0) {
-                viewsAndDate = Localization.shortViewCount(activity, Integer.parseInt(infoItem.getViewCount()));
+            if (Long.parseLong(infoItem.getViewCount()) >= 0) {
+                viewsAndDate = Localization.shortViewCount(activity, Long.parseLong(infoItem.getViewCount()));
             }}
             if (!TextUtils.isEmpty(infoItem.getPublishedAt())) {
                 if (viewsAndDate.isEmpty()) {
@@ -255,13 +255,13 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     }
     private String getDetailViewsSub(final YoutubeDataModel item) {
         String details = "";
-        if (!item.getSubscriberCount().isEmpty()&&Integer.parseInt(item.getSubscriberCount()) >= 0) {
+        if (!item.getSubscriberCount().isEmpty()&&Long.parseLong(item.getSubscriberCount()) >= 0) {
             details += Localization.shortSubscriberCount(activity,
-                    Integer.parseInt(item.getSubscriberCount()));
+                    Long.parseLong(item.getSubscriberCount()));
         }
-        if (!item.getVideoCount().isEmpty()&&Integer.parseInt(item.getVideoCount() )>= 0) {
+        if (!item.getVideoCount().isEmpty()&&Long.parseLong(item.getVideoCount() )>= 0) {
             String formattedVideoAmount = Localization.localizeStreamCount(activity,
-                    Integer.parseInt(item.getVideoCount()));
+                    Long.parseLong(item.getVideoCount()));
 
             if (!details.isEmpty()) {
                 details += " • " + formattedVideoAmount;
@@ -273,9 +273,9 @@ public class MultiViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         return details;
     } private String getDetailVideosCount(final YoutubeDataModel item) {
         String details = "";
-        if (!item.getVideoCount().isEmpty()&&Integer.parseInt(item.getVideoCount() )>= 0) {
+        if (!item.getVideoCount().isEmpty()&&Long.parseLong(item.getVideoCount() )>= 0) {
             String formattedVideoAmount = Localization.localizeStreamCount(activity,
-                    Integer.parseInt(item.getVideoCount()));
+                    Long.parseLong(item.getVideoCount()));
 
             if (!details.isEmpty()) {
                 details += " • " + formattedVideoAmount;

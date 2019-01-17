@@ -5,42 +5,56 @@
     tools:context="com.techmind.tubeless.fragments.DemoFragment">
 
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-            <include layout="@layout/playlist_header" />
-            <android.support.v4.widget.SwipeRefreshLayout
-                android:id="@+id/swipeRefreshLayout"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+        <include layout="@layout/playlist_header" />
+
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/mList_videos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
-            </android.support.v4.widget.SwipeRefreshLayout>
-        </LinearLayout>
-        <!-- LOADING INDICATOR-->
-        <ProgressBar
-            android:id="@+id/loading_progress_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
-            android:indeterminate="true"
-            android:theme="@style/RedAccent"
-            android:visibility="gone"
-            tools:visibility="visible" />
+        </android.support.v4.widget.SwipeRefreshLayout>
+    </LinearLayout>
+    <!-- LOADING INDICATOR-->
+    <ProgressBar
+        android:id="@+id/loading_progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
+        android:indeterminate="true"
+        android:theme="@style/RedAccent"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
-        <!--ERROR PANEL-->
-        <include
-            android:id="@+id/error_panel"
-            layout="@layout/error_retry"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
-            android:visibility="gone"
-            tools:visibility="visible" />
+    <TextView
+        android:id="@+id/listErrorMsg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:gravity="center"
+        android:text="@string/noVideos"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="@string/noVideos" />
+    <!--ERROR PANEL-->
+    <include
+        android:id="@+id/error_panel"
+        layout="@layout/error_retry"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginTop="@dimen/video_item_detail_error_panel_margin"
+        android:visibility="gone"
+        tools:visibility="visible" />
 </FrameLayout>

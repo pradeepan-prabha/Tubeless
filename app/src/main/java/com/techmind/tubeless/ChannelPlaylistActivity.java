@@ -520,6 +520,7 @@ public class ChannelPlaylistActivity extends AppCompatActivity {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+            youtubeDataModel=item;
 //            adapter.notifyDataSetChanged();
         }
     }

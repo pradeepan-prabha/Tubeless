@@ -5,10 +5,12 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
@@ -17,6 +19,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -67,7 +70,6 @@ import at.huber.youtubeExtractor.YtFile;
 
 import static com.techmind.tubeless.config.ConstURL.CHANNEL_GET_URL;
 import static com.techmind.tubeless.config.ConstURL.GOOGLE_YOUTUBE_API_KEY;
-import static com.techmind.tubeless.config.ConstURL.PLAYLIST_TYPE;
 import static com.techmind.tubeless.config.ConstURL.VIDEOS_TYPE;
 import static com.techmind.tubeless.util.AnimationUtils.animateView;
 
@@ -114,6 +116,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     private ImageView thumbsUpImageView;
     private TextView thumbsDownTextView;
     private ImageView thumbsDownImageView;
+    private LinearLayout activityDetailsLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +127,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         mYoutubePlayerView.initialize(GOOGLE_YOUTUBE_API_KEY, this);
 
         uploaderTextView = findViewById(R.id.detail_uploader_text_view);
+        activityDetailsLayout = findViewById(R.id.activityDetailsLayout);
         videoTitleRoot = findViewById(R.id.detail_title_root_layout);
         videoTitleTextView = findViewById(R.id.detail_video_title_view);
         videoDescriptionRootLayout = findViewById(R.id.detail_description_root_layout);
@@ -195,7 +199,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     }
 
     private void setVideoStatisticsDetails() {
-        getStatisticsResponse(channelIdStatisticsQuery(youtubeDataModel.getChannel_id()), youtubeDataModel,false);
+        getStatisticsResponse(channelIdStatisticsQuery(youtubeDataModel.getChannel_id()), youtubeDataModel, false);
         if (!TextUtils.isEmpty(youtubeDataModel.getChannelTitle())) {
             uploaderTextView.setText(youtubeDataModel.getChannelTitle());
             uploaderTextView.setVisibility(View.VISIBLE);
@@ -205,22 +209,22 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         }
         uploaderThumb.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.buddy));
 
-        if (!youtubeDataModel.getViewCount().isEmpty() && Integer.parseInt(youtubeDataModel.getViewCount()) >= 0) {
-            videoCountView.setText(Localization.localizeViewCount(this, Integer.parseInt(youtubeDataModel.getViewCount())));
+        if (!youtubeDataModel.getViewCount().isEmpty() && Long.parseLong(youtubeDataModel.getViewCount()) >= 0) {
+            videoCountView.setText(Localization.localizeViewCount(this, Long.parseLong(youtubeDataModel.getViewCount())));
             videoCountView.setVisibility(View.VISIBLE);
         } else {
             videoCountView.setVisibility(View.GONE);
         }
 
-        if (!youtubeDataModel.getDislikeCount().isEmpty() && Integer.parseInt(youtubeDataModel.getDislikeCount()) == -1
-                && !youtubeDataModel.getLikeCount().isEmpty() && Integer.parseInt(youtubeDataModel.getLikeCount()) == -1) {
+        if (!youtubeDataModel.getDislikeCount().isEmpty() && Long.parseLong(youtubeDataModel.getDislikeCount()) == -1
+                && !youtubeDataModel.getLikeCount().isEmpty() && Long.parseLong(youtubeDataModel.getLikeCount()) == -1) {
             thumbsDownImageView.setVisibility(View.VISIBLE);
             thumbsUpImageView.setVisibility(View.VISIBLE);
             thumbsUpTextView.setVisibility(View.GONE);
             thumbsDownTextView.setVisibility(View.GONE);
         } else {
-            if (!youtubeDataModel.getDislikeCount().isEmpty() && Integer.parseInt(youtubeDataModel.getDislikeCount()) >= 0) {
-                thumbsDownTextView.setText(Localization.shortCount(this, Integer.parseInt(youtubeDataModel.getDislikeCount())));
+            if (!youtubeDataModel.getDislikeCount().isEmpty() && Long.parseLong(youtubeDataModel.getDislikeCount()) >= 0) {
+                thumbsDownTextView.setText(Localization.shortCount(this, Long.parseLong(youtubeDataModel.getDislikeCount())));
                 thumbsDownTextView.setVisibility(View.VISIBLE);
                 thumbsDownImageView.setVisibility(View.VISIBLE);
             } else {
@@ -228,8 +232,8 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                 thumbsDownImageView.setVisibility(View.GONE);
             }
 
-            if (!youtubeDataModel.getLikeCount().isEmpty() && Integer.parseInt(youtubeDataModel.getLikeCount()) >= 0) {
-                thumbsUpTextView.setText(Localization.shortCount(this, Integer.parseInt(youtubeDataModel.getLikeCount())));
+            if (!youtubeDataModel.getLikeCount().isEmpty() && Long.parseLong(youtubeDataModel.getLikeCount()) >= 0) {
+                thumbsUpTextView.setText(Localization.shortCount(this, Long.parseLong(youtubeDataModel.getLikeCount())));
                 thumbsUpTextView.setVisibility(View.VISIBLE);
                 thumbsUpImageView.setVisibility(View.VISIBLE);
             } else {
@@ -238,8 +242,8 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
             }
         }
 
-        /*if (!youtubeDataModel.getDuration().isEmpty() &&Integer.parseInt(youtubeDataModel.getDuration()) > 0) {
-            detailDurationView.setText(Localization.getDurationString(Integer.parseInt(youtubeDataModel.getDuration())));
+        /*if (!youtubeDataModel.getDuration().isEmpty() &&Long.parseLong(youtubeDataModel.getDuration()) > 0) {
+            detailDurationView.setText(Localization.getDurationString(Long.parseLong(youtubeDataModel.getDuration())));
             detailDurationView.setBackgroundColor(ContextCompat.getColor(this, R.color.duration_background_color));
             animateView(detailDurationView, true, 100);
         } else {
@@ -399,8 +403,26 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         adapter = new VideoPostAdapter(getApplicationContext(), mListData, mList_videos, new OnItemClickListener() {
             @Override
             public void onItemClick(YoutubeDataModel item) {
-                if (item != null && !item.getVideo_id().isEmpty()) {
-                    getStatisticsResponse(videosIdStatisticsQuery(item.getVideo_id()), item,true);
+                ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
+                if (connectionDetector.isConnectingToInternet()) {
+                    if (item != null && !item.getVideo_id().isEmpty()) {
+                        getStatisticsResponse(videosIdStatisticsQuery(item.getVideo_id()), item, true);
+                    }
+                } else {
+                    Snackbar snackbar=Snackbar.make(activityDetailsLayout, "Check Network Connection", Snackbar.LENGTH_LONG);
+                    // Changing message text color
+//                    snackbar.setActionTextColor(Color.RED);
+                    // Changing action button text color
+                    View sbView = snackbar.getView();
+                    TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                        textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                    } else {
+                        textView.setGravity(Gravity.CENTER_HORIZONTAL);
+                    }
+                    textView.setTextColor(Color.WHITE);
+                    snackbar.show();
+
                 }
             }
         });
@@ -418,7 +440,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         }
     }
 
-    private void getStatisticsResponse(String url, YoutubeDataModel item,Boolean passToNextActivity ) {
+    private void getStatisticsResponse(String url, YoutubeDataModel item, Boolean passToNextActivity) {
         System.out.println("Request_Statistics_URL=****************** " + url);
         JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
                 new Response.Listener<JSONObject>() {
@@ -427,7 +449,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                         System.out.println("Get Statistics Response Api************* = " + response);
                         Intent intent;
                         parseTrendingStatisticsResponse(response, item);
-                        if(passToNextActivity) {
+                        if (passToNextActivity) {
                             if (item.getKind().equalsIgnoreCase("youtube#video")) {
 //                                parseTrendingStatisticsResponse(response, item);
                                 intent = new Intent(getApplicationContext(), VideoPlayerActivity.class);
@@ -536,7 +558,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                                 String title = jsonSnippet.getString("title");
                                 if (json.has("videoId")) {
                                     video_id = json.getString("videoId");
-                                    }
+                                }
                                 youtubeObject.setChannel_id(jsonSnippet.getString("channelId"));
                                 String description = jsonSnippet.getString("description");
                                 String publishedAt = jsonSnippet.getString("publishedAt");

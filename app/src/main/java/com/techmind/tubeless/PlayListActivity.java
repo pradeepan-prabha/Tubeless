@@ -65,6 +65,7 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
     private TextView headerUploaderName;
     private ImageView headerUploaderAvatar;
     private TextView headerStreamCount;
+    private TextView listErrorMsg;
     private SwipeRefreshLayout mSwipeRefreshLayout;
 
     @Override
@@ -75,6 +76,7 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
         headerTitleView = findViewById(R.id.playlist_title_view);
         headerUploaderLayout = findViewById(R.id.uploader_layout);
         headerUploaderName = findViewById(R.id.uploader_name);
+        listErrorMsg = findViewById(R.id.listErrorMsg);
         headerUploaderAvatar = findViewById(R.id.uploader_avatar_view);
         headerStreamCount = findViewById(R.id.playlist_stream_count);
 
@@ -91,6 +93,10 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
         errorButtonRetry.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(mListData!=null&&mListData.size()>0) {
+                    mListData.clear();
+                    adapter.notifyDataSetChanged();
+                }
                 getPlayVideoList();
             }
         });
@@ -103,9 +109,9 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
         headerTitleView.setText(youtubeDataModel.getTitle());
         headerUploaderName.setText(youtubeDataModel.getChannelTitle());
         headerStreamCount.setText(Localization.localizeStreamCount(getApplicationContext(),
-                Integer.parseInt(youtubeDataModel.getVideoCount())));
+                Long.parseLong(youtubeDataModel.getVideoCount())));
         System.out.println("getChannelTitle************ " + youtubeDataModel.getChannelTitle());
-        System.out.println("getThumbnailDefault**********" + youtubeDataModel.getThumbnailDefault());
+        System.out.println("getThumbnailDefault**********" + youtubeDataModel.getThumbnailMedium());
 //        Picasso.get().load(youtubeDataModel.getThumbnailDefault()).into(headerUploaderAvatar);
 
         CHANNEL_PLAYLIST_GET_URL = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" +
@@ -114,6 +120,10 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                if(mListData!=null&&mListData.size()>0) {
+                    mListData.clear();
+                    adapter.notifyDataSetChanged();
+                }
                 getPlayVideoList();
             }
         });
@@ -170,6 +180,9 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
         } else {
             errorPanelRoot.setVisibility(View.VISIBLE);
             errorTextView.setText("No Network");
+            if (mSwipeRefreshLayout != null && mSwipeRefreshLayout.isRefreshing()) {
+                mSwipeRefreshLayout.setRefreshing(false);
+            }
         }
     }
 
@@ -306,6 +319,7 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+            youtubeDataModel=item;
 //            adapter.notifyDataSetChanged();
         }
     }
@@ -404,10 +418,10 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
     }
 
     private void requestPlayList() {
-
+        if(mListData!=null&&mListData.size()>0)
+            mListData.clear();
         JSONObject jsonObjUserDetail = new JSONObject();
         if (loadingProgressBar != null) animateView(loadingProgressBar, true, 400);
-        animateView(errorPanelRoot, false, 150);
 
         //Retrieving response from the server
         JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, CHANNEL_PLAYLIST_GET_URL, jsonObjUserDetail,
@@ -416,18 +430,23 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
                     public void onResponse(JSONObject response) {
                         System.out.println("PlayList response =********************* " + response);
                         mListData = parseVideoListFromResponse(response);
-                        initList(mListData);
-                        if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
-                        animateView(errorPanelRoot, false, 150);
+                        if(mListData.size()>0) {
+                            listErrorMsg.setVisibility(View.GONE);
+                            initList(mListData);
+                        }else{
+                            listErrorMsg.setVisibility(View.VISIBLE);
+                        }
+                        errorPanelRoot.setVisibility(View.INVISIBLE);
                         if (mSwipeRefreshLayout != null && mSwipeRefreshLayout.isRefreshing()) {
                             mSwipeRefreshLayout.setRefreshing(false);
                         }
+                        if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
-                animateView(errorPanelRoot, false, 150);
+                errorPanelRoot.setVisibility(View.VISIBLE);
                 if (mSwipeRefreshLayout != null && mSwipeRefreshLayout.isRefreshing()) {
                     mSwipeRefreshLayout.setRefreshing(false);
                 }
@@ -473,9 +492,6 @@ public class PlayListActivity extends AppCompatActivity implements View.OnClickL
     public void onClick(View view) {
 
         switch (view.getId()) {
-            case R.id.error_button_retry:
-                getPlayVideoList();
-                break;
             case R.id.uploader_layout:
                 Intent intent = new Intent(PlayListActivity.this, ChannelPlaylistActivityWithoutAnim.class);
                 intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);

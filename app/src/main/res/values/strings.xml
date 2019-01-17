@@ -582,4 +582,7 @@
     <string name="max_retry_desc">Maximum number of attempts before canceling the download</string>
     <string name="pause_downloads_on_mobile">Pause on switching to mobile data</string>
     <string name="pause_downloads_on_mobile_desc">Not all downloads can be suspended, in those cases, will be restarted</string>
+    <string name="noVideos">No Videos</string>
+    <string name="noBookMark">No Bookmarks</string>
+    <string name="noResultsFound">No results found</string>
 </resources>

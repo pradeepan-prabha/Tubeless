@@ -139,18 +139,20 @@ public class MainActivity extends AppCompatActivity {
     private void getBookMarkedDate() {
         ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
         if (connectionDetector.isConnectingToInternet()) {
-        // Get all posts from database
-        youtubeDataModelsList = PostsDatabaseHelper.getInstance(getApplicationContext()).getAllPosts();
-        if (youtubeDataModelsList.size() > 0) {
-            empty_view.setVisibility(View.GONE);
-        } else {
-            empty_view.setVisibility(View.VISIBLE);
-        }
+            errorPanelRoot.setVisibility(View.GONE);
+            // Get all posts from database
+            youtubeDataModelsList = PostsDatabaseHelper.getInstance(getApplicationContext()).getAllPosts();
+            if (youtubeDataModelsList.size() > 0) {
+                empty_view.setVisibility(View.GONE);
+            } else {
+                empty_view.setVisibility(View.VISIBLE);
+            }
 //        for (YoutubeDataModel youtubeDataModelsIndex : youtubeDataModelsList) {
 //        }
-        initList((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
+            initList((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
+
         } else {
-            if (youtubeDataModelsList!=null&&youtubeDataModelsList.size() > 0) {
+            if (youtubeDataModelsList != null && youtubeDataModelsList.size() > 0) {
                 youtubeDataModelsList.clear();
                 adapter.notifyDataSetChanged();
             }
@@ -161,8 +163,6 @@ public class MainActivity extends AppCompatActivity {
             mSwipeRefreshLayout.setRefreshing(false);
         }
         if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
-        animateView(errorPanelRoot, false, 150);
-
     }
 
     private void initList(ArrayList<YoutubeDataModel> mListData) {
