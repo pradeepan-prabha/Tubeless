@@ -2,14 +2,24 @@ package com.techmind.tubeless;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.PendingIntent;
+import android.app.PictureInPictureParams;
 import android.app.ProgressDialog;
+import android.app.RemoteAction;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.Icon;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.DrawableRes;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -18,6 +28,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.Rational;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.View;
@@ -117,6 +128,32 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     private TextView thumbsDownTextView;
     private ImageView thumbsDownImageView;
     private LinearLayout activityDetailsLayout;
+    private ImageView popupBtn;
+    private PictureInPictureParams.Builder pictureInPictureParamsBuilder;
+    private LinearLayout scrollLinearLayout;
+    private String mPlay;
+    private String mPause;
+    /** Intent action for media controls from Picture-in-Picture mode. */
+    private static final String ACTION_MEDIA_CONTROL = "media_control";
+
+    /** Intent extra for media controls from Picture-in-Picture mode. */
+    private static final String EXTRA_CONTROL_TYPE = "control_type";
+
+    /** The request code for play action PendingIntent. */
+    private static final int REQUEST_PLAY = 1;
+
+    /** The request code for pause action PendingIntent. */
+    private static final int REQUEST_PAUSE = 2;
+
+    /** The request code for info action PendingIntent. */
+    private static final int REQUEST_INFO = 3;
+
+    /** The intent extra value for play action. */
+    private static final int CONTROL_TYPE_PLAY = 1;
+
+    /** The intent extra value for pause action. */
+    private static final int CONTROL_TYPE_PAUSE = 2;
+    private BroadcastReceiver mReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,6 +170,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         videoDescriptionRootLayout = findViewById(R.id.detail_description_root_layout);
         videoTitleToggleArrow = findViewById(R.id.detail_toggle_description_view);
         textViewDes = (TextView) findViewById(R.id.detail_description_view);
+        scrollLinearLayout = findViewById(R.id.scrollLinearLayout);
         img_bookmark = findViewById(R.id.img_bookmark);
         // imageViewIcon = (ImageView) findViewById(R.id.imageView);
         uploaderThumb = findViewById(R.id.detail_uploader_thumbnail_view);
@@ -149,6 +187,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         errorPanelRoot = findViewById(R.id.error_panel);
         errorButtonRetry = findViewById(R.id.error_button_retry);
         errorTextView = findViewById(R.id.error_message_view);
+        scrollLinearLayout.setVisibility(View.GONE);
 
 //        videoDescriptionView.setMovementMethod(LinkMovementMethod.getInstance());
 //        videoDescriptionView.setAutoLinkMask(Linkify.WEB_URLS);
@@ -160,7 +199,41 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         thumbsDownImageView = findViewById(R.id.detail_thumbs_down_img_view);
         uploaderRootLayout = findViewById(R.id.detail_uploader_root_layout);
         videoUploadDateView = findViewById(R.id.detail_upload_date_view);
+        popupBtn = findViewById(R.id.popupBtn);
 
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            pictureInPictureParamsBuilder =
+                    new PictureInPictureParams.Builder();
+            // Prepare string resources for Picture-in-Picture actions.
+            mPlay = getString(R.string.play);
+            mPause = getString(R.string.pause);
+        }
+        popupBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Build.VERSION.SDK_INT >= 26) {
+                    //Trigger PiP mode
+                    try {
+/*                        Rational rational = new Rational(mYoutubePlayerView.getWidth(), mYoutubePlayerView.getHeight());
+
+                        PictureInPictureParams mParams =
+                                new PictureInPictureParams.Builder()
+                                        .setAspectRatio(rational)
+                                        .build();
+
+                        enterPictureInPictureMode(mParams);*/
+                        startPictureInPictureFeature();
+
+                    } catch (IllegalStateException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(VideoPlayerActivity.this, "API 26 needed to perform PiP", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+        });
 
 //        textViewDate.setText(youtubeDataModel.getPublishedAt());
         if (!TextUtils.isEmpty(youtubeDataModel.getPublishedAt())) {
@@ -196,6 +269,28 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         }
 
         setVideoStatisticsDetails();
+    }
+
+    private void startPictureInPictureFeature() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            System.out.println("mYoutubePlayerView.getWidth() = " + mYoutubePlayerView.getWidth());
+            System.out.println(" mYoutubePlayerView.getHeight() = " +  mYoutubePlayerView.getHeight());
+            Rational aspectRatio = new Rational(mYoutubePlayerView.getWidth(), mYoutubePlayerView.getHeight());
+            pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
+            enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
+        }
+    }
+
+    @Override
+    public void onUserLeaveHint() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!isInPictureInPictureMode()) {
+                Rational aspectRatio = new Rational(mYoutubePlayerView.getWidth(), mYoutubePlayerView.getHeight());
+                pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
+                enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
+            }
+        }
     }
 
     private void setVideoStatisticsDetails() {
@@ -409,13 +504,13 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                         getStatisticsResponse(videosIdStatisticsQuery(item.getVideo_id()), item, true);
                     }
                 } else {
-                    Snackbar snackbar=Snackbar.make(activityDetailsLayout, "Check Network Connection", Snackbar.LENGTH_LONG);
+                    Snackbar snackbar = Snackbar.make(activityDetailsLayout, "Check Network Connection", Snackbar.LENGTH_LONG);
                     // Changing message text color
 //                    snackbar.setActionTextColor(Color.RED);
                     // Changing action button text color
                     View sbView = snackbar.getView();
                     TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                     } else {
                         textView.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -458,9 +553,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                                 startActivity(intent);
                             }
                         }
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-                            overridePendingTransition(R.animator.right_in, R.animator.left_out);
-                        }
+                        overridePendingTransition(R.animator.right_in, R.animator.left_out);
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -616,7 +709,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         youTubePlayer.setPlayerStateChangeListener(playerStateChangeListener);
         youTubePlayer.setPlaybackEventListener(playbackEventListener);
         if (!wasRestored) {
-            youTubePlayer.cueVideo(youtubeDataModel.getVideo_id());
+            youTubePlayer.loadVideo(youtubeDataModel.getVideo_id());
         }
         mYoutubePlayer = youTubePlayer;
     }
@@ -624,17 +717,29 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     private YouTubePlayer.PlaybackEventListener playbackEventListener = new YouTubePlayer.PlaybackEventListener() {
         @Override
         public void onPlaying() {
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    && isInPictureInPictureMode()) {
+                updatePictureInPictureActions(
+                        R.drawable.ic_pause_24dp, mPause, CONTROL_TYPE_PAUSE, REQUEST_PAUSE);
+            }
         }
 
         @Override
         public void onPaused() {
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    && isInPictureInPictureMode()) {
+                updatePictureInPictureActions(
+                        R.drawable.ic_play_arrow_24dp, mPlay, CONTROL_TYPE_PLAY, REQUEST_PLAY);
+            }
         }
 
         @Override
         public void onStopped() {
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    && isInPictureInPictureMode()) {
+                updatePictureInPictureActions(
+                        R.drawable.ic_play_arrow_24dp, mPlay, CONTROL_TYPE_PLAY, REQUEST_PLAY);
+            }
         }
 
         @Override
@@ -656,7 +761,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
 
         @Override
         public void onLoaded(String s) {
-
+            mYoutubePlayer.play();
         }
 
         @Override
@@ -834,7 +939,6 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                     YoutubeCommentModel youtubeObject = new YoutubeCommentModel();
                     JSONObject jsonTopLevelComment = json.getJSONObject("snippet").getJSONObject("topLevelComment");
                     JSONObject jsonSnippet = jsonTopLevelComment.getJSONObject("snippet");
-
                     String title = jsonSnippet.getString("authorDisplayName");
                     String thumbnail = jsonSnippet.getString("authorProfileImageUrl");
                     String comment = jsonSnippet.getString("textDisplay");
@@ -857,8 +961,10 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
 
     public void requestPermissionForReadExtertalStorage() throws Exception {
         try {
-            ActivityCompat.requestPermissions((Activity) this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    READ_STORAGE_PERMISSION_REQUEST_CODE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                ActivityCompat.requestPermissions((Activity) this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        READ_STORAGE_PERMISSION_REQUEST_CODE);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
@@ -906,21 +1012,34 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
             }
         };
         AppController.getInstance().addToRequestQueue(js, null);
-
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                && !isInPictureInPictureMode()) {
+            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+                mYoutubePlayer.play();
+            // Continue playback...
+        }
+    }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                && isInPictureInPictureMode()) {
+            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+                mYoutubePlayer.play();
+            // Continue playback...
+        }
     }
 
     @Override
     public void onBackPressed() {
         finish();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-            this.overridePendingTransition(R.animator.left_to_right, R.animator.right_to_left);
-        }
+        this.overridePendingTransition(R.animator.left_to_right, R.animator.right_to_left);
         super.onBackPressed();
     }
 
@@ -928,4 +1047,135 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         return "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
     }
 
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode);
+        if (isInPictureInPictureMode) {
+            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+                mYoutubePlayer.play();
+//            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+//                mYoutubePlayer.play();
+            // Hide the full-screen UI (controls, etc.) while in picture-in-picture mode.
+            System.out.println("isInPictureInPictureMode = " + isInPictureInPictureMode);
+        } else {
+            scrollLinearLayout.setVisibility(View.VISIBLE);
+            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+                mYoutubePlayer.play();
+//                mYoutubePlayer.play();
+//            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+//                mYoutubePlayer.play();
+            // Restore the full-screen UI.
+            System.out.println("isInPictureInPictureMode = " + isInPictureInPictureMode);
+
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        adjustFullScreen(newConfig);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            adjustFullScreen(getResources().getConfiguration());
+        }
+    }
+
+    private void adjustFullScreen(Configuration config) {
+        final View decorView = getWindow().getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                decorView.setSystemUiVisibility(
+                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                scrollLinearLayout.setVisibility(View.GONE);
+            } else {
+                decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+                scrollLinearLayout.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+    //*
+//     * Update the state of pause/resume action item in Picture-in-Picture mode.
+//     *
+//     * @param iconId The icon to be used.
+//     * @param title The title text.
+//     * @param controlType The type of the action. either {@link #CONTROL_TYPE_PLAY} or {@link
+//     *     #CONTROL_TYPE_PAUSE}.
+//     * @param requestCode The request code for the {@link PendingIntent}.
+
+
+    void updatePictureInPictureActions(
+            @DrawableRes int iconId, String title, int controlType, int requestCode) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+
+            final ArrayList<RemoteAction> actions = new ArrayList<>();
+
+            // This is the PendingIntent that is invoked when a user clicks on the action item.
+            // You need to use distinct request codes for play and pause, or the PendingIntent won't
+            // be properly updated.
+            final PendingIntent intent =
+                    PendingIntent.getBroadcast(
+                            VideoPlayerActivity.this,
+                            requestCode,
+                            new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_CONTROL_TYPE, controlType),
+                            0);
+            final Icon icon;
+            icon = Icon.createWithResource(VideoPlayerActivity.this, iconId);
+            actions.add(new RemoteAction(icon, title, title, intent));
+
+            pictureInPictureParamsBuilder.setActions(actions);
+
+            // This is how you can update action items (or aspect ratio) for Picture-in-Picture mode.
+            // Note this call can happen even when the app is not in PiP mode. In that case, the
+            // arguments will be used for at the next call of #enterPictureInPictureMode.
+            setPictureInPictureParams(pictureInPictureParamsBuilder.build());
+        }
+    }
+    @Override
+    public void onPictureInPictureModeChanged(
+            boolean isInPictureInPictureMode, Configuration configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, configuration);
+        if (isInPictureInPictureMode) {
+            // Starts receiving events from action items in PiP mode.
+            mReceiver =
+                    new BroadcastReceiver() {
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            if (intent == null
+                                    || !ACTION_MEDIA_CONTROL.equals(intent.getAction())) {
+                                return;
+                            }
+
+                            // This is where we are called back from Picture-in-Picture action
+                            // items.
+                            final int controlType = intent.getIntExtra(EXTRA_CONTROL_TYPE, 0);
+                            switch (controlType) {
+                                case CONTROL_TYPE_PLAY:
+                                    mYoutubePlayer.play();
+                                    break;
+                                case CONTROL_TYPE_PAUSE:
+                                    mYoutubePlayer.pause();
+                                    break;
+                            }
+                        }
+                    };
+            registerReceiver(mReceiver, new IntentFilter(ACTION_MEDIA_CONTROL));
+        } else {
+            // We are out of PiP mode. We can stop receiving events from it.
+            unregisterReceiver(mReceiver);
+            mReceiver = null;
+            // Show the video controls if the video is not playing
+//            if (mMovieView != null && !mMovieView.isPlaying()) {
+//                mMovieView.showControls();
+//            }
+        }
+    }
 }

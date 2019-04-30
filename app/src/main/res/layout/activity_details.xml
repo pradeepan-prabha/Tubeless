@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:toos="http://schemas.android.com/apk/res-auto"
     android:id="@+id/activityDetailsLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,30 +14,26 @@
     <!--android:layout_weight="1"-->
     <!--android:scaleType="centerCrop"-->
     <!--android:tag="image_tag" />-->
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/youtube_playerLo"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="10">
+        android:layout_height="wrap_content">
 
         <com.google.android.youtube.player.YouTubePlayerView
             android:id="@+id/youtube_player"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </LinearLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="5">
+            android:layout_height="wrap_content"
+            tools:layout_height="200dp"/>
+    </RelativeLayout>
 
         <android.support.v4.widget.NestedScrollView
             android:id="@+id/nestedScrollView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:overScrollMode="never">
 
             <LinearLayout
+                android:id="@+id/scrollLinearLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
@@ -50,7 +47,6 @@
                     android:focusable="true"
                     android:paddingLeft="12dp"
                     android:paddingRight="12dp">
-
                     <TextView
                         android:id="@+id/detail_video_title_view"
                         android:layout_width="match_parent"
@@ -76,14 +72,12 @@
                 </FrameLayout>
 
                 <!--DETAIL-->
-
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1px"
                     android:layout_marginLeft="8dp"
                     android:layout_marginRight="8dp"
                     android:background="@color/gray"/>
-
                 <!--real image size is 40x50px-->
                 <RelativeLayout
                     android:id="@+id/detail_root"
@@ -256,6 +250,17 @@
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_bookmarks_outline"
                         android:visibility="visible" />
+                    <ImageButton
+                        android:layout_weight="2"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:id="@+id/popupBtn"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_margin="10dp"
+                        android:padding="5dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_picture_in_picture_black_24dp"
+                        android:visibility="visible" />
                 </LinearLayout>
                 <View
                     android:layout_width="match_parent"
@@ -317,7 +322,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="10dp"
-                        android:text="Up next"
+                        android:text="@string/up_next"
                         android:textColor="@color/common_blue_bg" />
                     <!-- LOADING INDICATOR-->
                     <ProgressBar
@@ -360,5 +365,4 @@
                 <!--android:src="@drawable/play"/>-->
             </LinearLayout>
         </android.support.v4.widget.NestedScrollView>
-    </RelativeLayout>
 </LinearLayout>

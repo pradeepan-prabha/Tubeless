@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/channel_header_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/dark_contrast_background_color">
+
+    <RelativeLayout
+        android:id="@+id/channel_metadata"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/channel_banner_image"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:background="@android:color/black"
+            android:fitsSystemWindows="true"
+            android:scaleType="centerCrop"
+            android:src="@drawable/channel_banner"
+            tools:ignore="ContentDescription"/>
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/channel_avatar_view"
+            android:layout_width="@dimen/channel_avatar_size"
+            android:layout_height="@dimen/channel_avatar_size"
+            android:layout_alignTop="@id/channel_banner_image"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="75dp"
+            android:src="@drawable/buddy"
+            app:civ_border_color="#ffffff"
+            app:civ_border_width="2dp"
+            tools:ignore="RtlHardcoded"/>
+
+        <TextView
+            android:id="@+id/channel_title_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/channel_banner_image"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginTop="6dp"
+            android:layout_toLeftOf="@+id/channel_subscribe_button"
+            android:layout_toRightOf="@+id/channel_avatar_view"
+            android:ellipsize="end"
+            android:lines="1"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textSize="@dimen/video_item_detail_title_text_size"
+            tools:ignore="RtlHardcoded"
+            tools:text="Lorem ipsum dolor"/>
+
+        <TextView
+            android:id="@+id/channel_subscriber_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/channel_title_view"
+            android:layout_alignRight="@+id/channel_title_view"
+            android:layout_below="@+id/channel_title_view"
+            android:ellipsize="end"
+            android:gravity="left|center"
+            android:maxLines="2"
+            android:textSize="@dimen/channel_subscribers_text_size"
+            tools:ignore="RtlHardcoded"
+            tools:text="123,141,411 subscribers"
+            tools:visibility="visible"/>
+
+        <ImageButton
+            android:id="@+id/img_bookmark"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_below="@+id/channel_banner_image"
+            android:layout_alignParentRight="true"
+            android:layout_gravity="center_vertical|right"
+            android:background="@color/transparent_background_color"
+            android:contentDescription="TODO"
+            android:gravity="left|center_vertical"
+            android:padding="5dp"
+            android:layout_margin="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_bookmarks_outline"
+            android:visibility="visible"
+            tools:ignore="RtlHardcoded" />
+
+    </RelativeLayout>
+
+</RelativeLayout>
