@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1009788551369",
+    "firebase_url": "https://tubeless-a3b9b.firebaseio.com",
+    "project_id": "tubeless-a3b9b",
+    "storage_bucket": "tubeless-a3b9b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1009788551369:android:a90e34a982d3c622",
+        "android_client_info": {
+          "package_name": "com.techmind.tubeless"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1009788551369-ant1sq39orejcoh4hv1tfketb6qtk3nk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBezdditdZLB1M9yazm3T6NqG7eRFRECz4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1009788551369-ant1sq39orejcoh4hv1tfketb6qtk3nk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

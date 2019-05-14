@@ -223,8 +223,16 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                                         .build();
 
                         enterPictureInPictureMode(mParams);*/
-                        startPictureInPictureFeature();
+//                        startPictureInPictureFeature();
 
+                        Rational rational = new Rational(mYoutubePlayerView.getWidth(), mYoutubePlayerView.getHeight());
+
+                        PictureInPictureParams mParams =
+                                new PictureInPictureParams.Builder()
+                                        .setAspectRatio(rational)
+                                        .build();
+
+                        enterPictureInPictureMode(mParams);
                     } catch (IllegalStateException e) {
                         e.printStackTrace();
                     }

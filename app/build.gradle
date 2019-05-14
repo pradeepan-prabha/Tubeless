@@ -48,4 +48,8 @@ dependencies {
     implementation 'com.google.android.exoplayer:extension-mediasession:2.8.4'
     implementation 'com.android.support:support-media-compat:28.0.0'
     implementation 'com.github.nirhart:ParallaxScroll:dd53d1f9d1'
+    implementation 'com.google.firebase:firebase-core:16.0.8'
+    implementation 'com.google.firebase:firebase-messaging:17.6.0'
+
 }
+apply plugin: 'com.google.gms.google-services'
