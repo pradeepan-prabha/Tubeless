@@ -10,7 +10,7 @@
     android:layout_marginBottom="5dp"
     >
 
-    <android.support.v7.widget.CardView
+    <androidx.cardview.widget.CardView
         card_view:cardElevation="6dp"
         card_view:cardMaxElevation="10dp"
         android:layout_width="match_parent"
@@ -72,5 +72,5 @@
                     android:maxLines="2" />
             </LinearLayout>
         </RelativeLayout>
-    </android.support.v7.widget.CardView>
+    </androidx.cardview.widget.CardView>
 </LinearLayout>

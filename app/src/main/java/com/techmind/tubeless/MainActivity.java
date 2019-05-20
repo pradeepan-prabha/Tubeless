@@ -5,15 +5,20 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
+
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.Toolbar;
+
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,12 +28,15 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
+import com.techmind.tubeless.adapters.GenresAlbumsGridAdapter;
 import com.techmind.tubeless.adapters.MultiViewAdapter;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
 import com.techmind.tubeless.models.YoutubeDataModel;
+import com.techmind.tubeless.pojo.VideosGridCategory;
 import com.techmind.tubeless.util.ConnectionDetector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.techmind.tubeless.config.ConstURL.CHANNEL_TYPE;
@@ -60,19 +68,24 @@ public class MainActivity extends AppCompatActivity {
     private TextView errorTextView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private List<YoutubeDataModel> youtubeDataModelsList;
+    private List<VideosGridCategory> albumList;
+    private RecyclerView genresAlbumsHorizontalRecyclerView;
+    private GenresAlbumsGridAdapter genresAlbumsGridAdapter;
+    private TextView moreGenresTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nav_drawer);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.nav_drawer);
-        FloatingActionButton fab = findViewById(R.id.fab);
+//        FloatingActionButton fab = findViewById(R.id.fab);
         mUserLearnedDrawer = Boolean.valueOf(readSharedSetting(this, PREF_USER_LEARNED_DRAWER, "false"));
         mNavigationView = (NavigationView) findViewById(R.id.nav_view);
         loadingProgressBar = findViewById(R.id.loading_progress_bar);
         errorPanelRoot = findViewById(R.id.error_panel);
         errorButtonRetry = findViewById(R.id.error_button_retry);
         errorTextView = findViewById(R.id.error_message_view);
+        moreGenresTextView = findViewById(R.id.moreGenresTextView);
 
         setUpToolbar();
         setUpNavDrawer();
@@ -97,12 +110,21 @@ public class MainActivity extends AppCompatActivity {
                 getBookMarkedDate();
             }
         });
+        moreGenresTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent genresAlbumsListIntent = new Intent(MainActivity.this, GenresAlbumsGridList.class);
+                startActivity(genresAlbumsListIntent);
+            }
+        });
         mNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem menuItem) {
                 menuItem.setChecked(true);
                 switch (menuItem.getItemId()) {
                     case R.id.navigation_item_1:
+                        Intent genresAlbumsListIntent = new Intent(MainActivity.this, GenresAlbumsGridList.class);
+                        startActivity(genresAlbumsListIntent);
 //                        Snackbar.make(mContentFrame, "Item One", Snackbar.LENGTH_SHORT).show();
                         mCurrentSelectedPosition = 0;
                         return true;
@@ -115,17 +137,29 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        prepareGenresAlbums();
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+//                startActivity(intent);
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+//                    overridePendingTransition(R.animator.right_in, R.animator.left_out);
+//                }
+//            }
+//        });
+    }
 
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
-                startActivity(intent);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-                    overridePendingTransition(R.animator.right_in, R.animator.left_out);
-                }
-            }
-        });
+    private void prepareGenresAlbums() {
+        genresAlbumsHorizontalRecyclerView = (RecyclerView) findViewById(R.id.genresAlbumsHorizontalRV);
+        albumList = new ArrayList<>();
+        //Horizontal view=0 change view
+        genresAlbumsGridAdapter = new GenresAlbumsGridAdapter(this, albumList,0);
+        genresAlbumsHorizontalRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        genresAlbumsHorizontalRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        genresAlbumsHorizontalRecyclerView.setAdapter(genresAlbumsGridAdapter);
+
+        prepareAlbums();
     }
 
     private void getBookMarkedDate() {
@@ -265,6 +299,38 @@ public class MainActivity extends AppCompatActivity {
     public static String readSharedSetting(Context ctx, String settingName, String defaultValue) {
         SharedPreferences sharedPref = ctx.getSharedPreferences(PREFERENCES_FILE, Context.MODE_PRIVATE);
         return sharedPref.getString(settingName, defaultValue);
+    }
+
+    /**
+     * Adding few albums for testing
+     */
+    private void prepareAlbums() {
+        int[] covers = new int[]{
+                R.drawable.gradient_1,
+                R.drawable.gradient_2,
+                R.drawable.gradient_3,
+                R.drawable.gradient_4,
+                R.drawable.gradient_5,
+                R.drawable.gradient_6,
+                R.drawable.gradient_7,
+                R.drawable.gradient_8,
+                R.drawable.gradient_9,
+                R.drawable.gradient_10,
+                R.drawable.gradient_11,
+                R.drawable.gradient_12};
+        List<String> musicGenres = Arrays.asList(getResources().getStringArray(R.array.music_genres));
+        int coverGrandientColor = 0;
+        for (int i = 0; i < 10; i++) {
+            System.out.println("coverGradientColor = " + "I=" + i + "=" + coverGrandientColor);
+            albumList.add(new VideosGridCategory(musicGenres.get(i), 13, covers[coverGrandientColor]));
+            //Endless gradient color for card
+            if (coverGrandientColor == covers.length - 1) {
+                coverGrandientColor = 0;
+            } else {
+                coverGrandientColor++;
+            }
+        }
+        adapter.notifyDataSetChanged();
     }
 }
     /*

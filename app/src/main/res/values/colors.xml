@@ -52,4 +52,32 @@
     <color name="gray">#616161</color>
 
     <color name="black">#000</color>
+    <color name="viewBg">#f1f5f8</color>
+    <color name="album_title">#4c4c4c</color>
+
+
+    <color name="gradient_color1_A400">#000428 </color>
+    <color name="gradient_color1_900">#004e92</color>
+    <color name="gradient_color2_A400">#cc2b5e</color>
+    <color name="gradient_color2_900">#753a88</color>
+    <color name="gradient_color3_A400">#56ab2f</color>
+    <color name="gradient_color3_900">#a8e063</color>
+    <color name="gradient_color4_A400">#42275a</color>
+    <color name="gradient_color4_900">#734b6d</color>
+    <color name="gradient_color5_A400">#2193b0</color>
+    <color name="gradient_color5_900">#6dd5ed</color>
+    <color name="gradient_color6_A400">#ff512f </color>
+    <color name="gradient_color6_900">#dd2476</color>
+    <color name="gradient_color7_A400">#4568dc </color>
+    <color name="gradient_color7_900">#b06ab3</color>
+    <color name="gradient_color8_A400">#aa076b</color>
+    <color name="gradient_color8_900">#61045f</color>
+    <color name="gradient_color9_A400">#7b4397 </color>
+    <color name="gradient_color9_900">#dc2430</color>
+    <color name="gradient_color10_A400">#3B45A0</color>
+    <color name="gradient_color10_900">#056FCE</color>
+    <color name="gradient_color11_A400">#ff512f</color>
+    <color name="gradient_color11_900">#dd2476</color>
+    <color name="gradient_color12_A400">#141e30</color>
+    <color name="gradient_color12_900">#243b55</color>
 </resources>

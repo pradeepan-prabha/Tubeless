@@ -1,4 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-
+    <resources>
+    <string-array name="music_genres">
+        <item>Rock</item>
+        <item>Classic Rock</item>
+        <item>Jazz</item>
+        <item>Country</item>
+        <item>Alternative</item>
+        <item>Disco</item>
+        <item>World Music</item>
+        <item>Rhythm and Blues</item>
+        <item>Classical</item>
+        <item>Heavy Metal</item>
+        <item>Blues</item>
+        <item>Rap / hip - hop</item>
+        <item>Oldies</item>
+        <item>Indie Rock</item>
+        <item>Folk</item>
+        <item>Hard Rock</item>
+        <item>Soul / funk</item>
+        <item>Thrash Metal</item>
+        <item>Púnk Rock</item>
+        <item>Reggae</item>
+        <item>Heavy Metal</item>
+        <item>Blues Rock</item>
+        <item>Rhythm and blues</item>
+        <item>Power Metal</item>
+        <item>New Wave</item>
+        <item>Post Punk</item>
+        <item>Hardcore</item>
+        <item>Industrial</item>
+        <item>Religious</item>
+        <item>Opera</item>
+        <item>Bluegrass</item>
+        <item>Folk Metal</item>
+        <item>Metalcore</item>
+        <item>Symphonic Metal</item>
+        <item>Black Metal</item>
+        <item>Soul</item>
+        <item>Techno</item>
+        <item>House</item>
+        <item>Drum and Bass</item>
+        <item>Post - Rock</item>
+        <item>Acoustic Rock</item>
+        <item>Celtic</item>
+        <item>Garage Rock</item>
+        <item>Art Rock</item>
+        <item>Swing</item>
+        <item>Ambient</item>
+        <item>Hard Blues Rock</item>
+        <item>New Age</item>
+        <item>Baroque</item>
+        <item>Gospel</item>
+        <item>Jazz guitar</item>
+        <item>Dance / Electronica</item>
+        <item>Classical Rock / Progressive</item>
+        <item>Melodic Death Metal</item>
+        <item>Classical Crossover</item>
+        <item>Soundtracks / theme Songs</item>
+        <item>Psychedelic Rock</item>
+        <item>Indie</item>
+    </string-array>
+    <integer-array name="gradient_color">
+        <item>@drawable/gradient_1</item>
+        <item>@drawable/gradient_2</item>
+        <item>@drawable/gradient_3</item>
+        <item>@drawable/gradient_4</item>
+        <item>@drawable/gradient_5</item>
+        <item>@drawable/gradient_6</item>
+        <item>@drawable/gradient_7</item>
+        <item>@drawable/gradient_8</item>
+        <item>@drawable/gradient_9</item>
+        <item>@drawable/gradient_10</item>
+        <item>@drawable/gradient_11</item>
+        <item>@drawable/gradient_12</item>
+    </integer-array>
 </resources>

@@ -111,28 +111,6 @@
     <string name="noResultsFound">No results found</string>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     <string name="play">Play</string>
     <string name="fast_forward">Fast forward</string>
     <string name="fast_rewind">Fast rewind</string>
@@ -148,4 +126,11 @@
     <string name="switch_media_session">Switch to using MediaSession</string>
     <string name="title_bigbuckbunny">Big Buck Bunny</string>
     <string name="up_next">Up next</string>
+
+
+    <string name="action_settings">Settings</string>
+    <string name="action_add_favourite">Add to Favourites</string>
+    <string name="action_play_next">Play Next</string>
+    <string name="backdrop_title">LOVE MUSIC</string>
+    <string name="backdrop_subtitle">This season top 20 albums</string>
 </resources>

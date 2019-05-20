@@ -14,18 +14,23 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.Icon;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.DrawableRes;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.ViewCompat;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+
+import androidx.annotation.DrawableRes;
+
+import com.google.android.material.snackbar.Snackbar;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Rational;
@@ -45,10 +50,14 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.google.android.youtube.player.YouTubeBaseActivity;
-import com.google.android.youtube.player.YouTubeInitializationResult;
-import com.google.android.youtube.player.YouTubePlayer;
-import com.google.android.youtube.player.YouTubePlayerView;
+//import com.google.android.youtube.player.YouTubeBaseActivity;
+//import com.google.android.youtube.player.YouTubeInitializationResult;
+//import com.google.android.youtube.player.YouTubePlayer;
+//import com.google.android.youtube.player.YouTubeBaseActivity;
+//import com.google.android.youtube.player.YouTubePlayerView;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView;
 import com.squareup.picasso.Picasso;
 import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 import com.techmind.tubeless.adapters.CommentAdapter;
@@ -60,6 +69,7 @@ import com.techmind.tubeless.models.YoutubeCommentModel;
 import com.techmind.tubeless.models.YoutubeDataModel;
 import com.techmind.tubeless.util.ConnectionDetector;
 import com.techmind.tubeless.util.Localization;
+import com.techmind.tubeless.util.PermissionHelper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -85,7 +95,7 @@ import static com.techmind.tubeless.config.ConstURL.VIDEOS_TYPE;
 import static com.techmind.tubeless.util.AnimationUtils.animateView;
 
 
-public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubePlayer.OnInitializedListener, View.OnClickListener,
+public class VideoPlayerActivity extends AppCompatActivity implements View.OnClickListener,
         View.OnLongClickListener {
     private static final int READ_STORAGE_PERMISSION_REQUEST_CODE = 1;
     private YoutubeDataModel youtubeDataModel = null;
@@ -133,25 +143,39 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     private LinearLayout scrollLinearLayout;
     private String mPlay;
     private String mPause;
-    /** Intent action for media controls from Picture-in-Picture mode. */
+    /**
+     * Intent action for media controls from Picture-in-Picture mode.
+     */
     private static final String ACTION_MEDIA_CONTROL = "media_control";
 
-    /** Intent extra for media controls from Picture-in-Picture mode. */
+    /**
+     * Intent extra for media controls from Picture-in-Picture mode.
+     */
     private static final String EXTRA_CONTROL_TYPE = "control_type";
 
-    /** The request code for play action PendingIntent. */
+    /**
+     * The request code for play action PendingIntent.
+     */
     private static final int REQUEST_PLAY = 1;
 
-    /** The request code for pause action PendingIntent. */
+    /**
+     * The request code for pause action PendingIntent.
+     */
     private static final int REQUEST_PAUSE = 2;
 
-    /** The request code for info action PendingIntent. */
+    /**
+     * The request code for info action PendingIntent.
+     */
     private static final int REQUEST_INFO = 3;
 
-    /** The intent extra value for play action. */
+    /**
+     * The intent extra value for play action.
+     */
     private static final int CONTROL_TYPE_PLAY = 1;
 
-    /** The intent extra value for pause action. */
+    /**
+     * The intent extra value for pause action.
+     */
     private static final int CONTROL_TYPE_PAUSE = 2;
     private BroadcastReceiver mReceiver;
 
@@ -159,48 +183,52 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_details);
-        youtubeDataModel = getIntent().getParcelableExtra(YoutubeDataModel.class.toString());
-        mYoutubePlayerView = (YouTubePlayerView) findViewById(R.id.youtube_player);
-        mYoutubePlayerView.initialize(GOOGLE_YOUTUBE_API_KEY, this);
+        {
+            youtubeDataModel = getIntent().getParcelableExtra(YoutubeDataModel.class.toString());
+            mYoutubePlayerView = findViewById(R.id.youtube_player_view);
+            getLifecycle().addObserver(mYoutubePlayerView);
 
-        uploaderTextView = findViewById(R.id.detail_uploader_text_view);
-        activityDetailsLayout = findViewById(R.id.activityDetailsLayout);
-        videoTitleRoot = findViewById(R.id.detail_title_root_layout);
-        videoTitleTextView = findViewById(R.id.detail_video_title_view);
-        videoDescriptionRootLayout = findViewById(R.id.detail_description_root_layout);
-        videoTitleToggleArrow = findViewById(R.id.detail_toggle_description_view);
-        textViewDes = (TextView) findViewById(R.id.detail_description_view);
-        scrollLinearLayout = findViewById(R.id.scrollLinearLayout);
-        img_bookmark = findViewById(R.id.img_bookmark);
-        // imageViewIcon = (ImageView) findViewById(R.id.imageView);
-        uploaderThumb = findViewById(R.id.detail_uploader_thumbnail_view);
+            mYoutubePlayerView.addYouTubePlayerListener(new AbstractYouTubePlayerListener() {
+                @Override
+                public void onReady(@NonNull YouTubePlayer youTubePlayer) {
+                    youTubePlayer.loadVideo(youtubeDataModel.getVideo_id(), 0);
+                }
+            });
+        }
+        {
+            uploaderTextView = findViewById(R.id.detail_uploader_text_view);
+            activityDetailsLayout = findViewById(R.id.activityDetailsLayout);
+            videoTitleRoot = findViewById(R.id.detail_title_root_layout);
+            videoTitleTextView = findViewById(R.id.detail_video_title_view);
+            videoDescriptionRootLayout = findViewById(R.id.detail_description_root_layout);
+            videoTitleToggleArrow = findViewById(R.id.detail_toggle_description_view);
+            textViewDes = (TextView) findViewById(R.id.detail_description_view);
+            scrollLinearLayout = findViewById(R.id.scrollLinearLayout);
+            img_bookmark = findViewById(R.id.img_bookmark);
+            uploaderThumb = findViewById(R.id.detail_uploader_thumbnail_view);
 
-        videoTitleTextView.setText(youtubeDataModel.getTitle());
-        textViewDes.setText(youtubeDataModel.getDescription());
+            videoTitleTextView.setText(youtubeDataModel.getTitle());
+            textViewDes.setText(youtubeDataModel.getDescription());
 
-        videoTitleRoot = findViewById(R.id.detail_title_root_layout);
-        videoTitleTextView = findViewById(R.id.detail_video_title_view);
-        videoTitleToggleArrow = findViewById(R.id.detail_toggle_description_view);
-        videoCountView = findViewById(R.id.detail_view_count_view);
-        loadingProgressBar = findViewById(R.id.loading_progress_bar);
+            videoTitleRoot = findViewById(R.id.detail_title_root_layout);
+            videoTitleTextView = findViewById(R.id.detail_video_title_view);
+            videoTitleToggleArrow = findViewById(R.id.detail_toggle_description_view);
+            videoCountView = findViewById(R.id.detail_view_count_view);
+            loadingProgressBar = findViewById(R.id.loading_progress_bar);
 
-        errorPanelRoot = findViewById(R.id.error_panel);
-        errorButtonRetry = findViewById(R.id.error_button_retry);
-        errorTextView = findViewById(R.id.error_message_view);
-        scrollLinearLayout.setVisibility(View.GONE);
+            errorPanelRoot = findViewById(R.id.error_panel);
+            errorButtonRetry = findViewById(R.id.error_button_retry);
+            errorTextView = findViewById(R.id.error_message_view);
+            scrollLinearLayout.setVisibility(View.GONE);
 
-//        videoDescriptionView.setMovementMethod(LinkMovementMethod.getInstance());
-//        videoDescriptionView.setAutoLinkMask(Linkify.WEB_URLS);
-
-        //thumbsRootLayout = rootView.findViewById(R.id.detail_thumbs_root_layout);
-        thumbsUpTextView = findViewById(R.id.detail_thumbs_up_count_view);
-        thumbsUpImageView = findViewById(R.id.detail_thumbs_up_img_view);
-        thumbsDownTextView = findViewById(R.id.detail_thumbs_down_count_view);
-        thumbsDownImageView = findViewById(R.id.detail_thumbs_down_img_view);
-        uploaderRootLayout = findViewById(R.id.detail_uploader_root_layout);
-        videoUploadDateView = findViewById(R.id.detail_upload_date_view);
-        popupBtn = findViewById(R.id.popupBtn);
-
+            thumbsUpTextView = findViewById(R.id.detail_thumbs_up_count_view);
+            thumbsUpImageView = findViewById(R.id.detail_thumbs_up_img_view);
+            thumbsDownTextView = findViewById(R.id.detail_thumbs_down_count_view);
+            thumbsDownImageView = findViewById(R.id.detail_thumbs_down_img_view);
+            uploaderRootLayout = findViewById(R.id.detail_uploader_root_layout);
+            videoUploadDateView = findViewById(R.id.detail_upload_date_view);
+            popupBtn = findViewById(R.id.popupBtn);
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             pictureInPictureParamsBuilder =
@@ -212,27 +240,16 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         popupBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                /*if (Build.VERSION.SDK_INT >= 26) {
+                    if (!PermissionHelper.isPopupEnabled(getApplicationContext())) {
+                        PermissionHelper.showPopupEnablementToast(getApplicationContext());
+                        return;
+                    }
+                }*/
                 if (Build.VERSION.SDK_INT >= 26) {
                     //Trigger PiP mode
                     try {
-/*                        Rational rational = new Rational(mYoutubePlayerView.getWidth(), mYoutubePlayerView.getHeight());
-
-                        PictureInPictureParams mParams =
-                                new PictureInPictureParams.Builder()
-                                        .setAspectRatio(rational)
-                                        .build();
-
-                        enterPictureInPictureMode(mParams);*/
-//                        startPictureInPictureFeature();
-
-                        Rational rational = new Rational(mYoutubePlayerView.getWidth(), mYoutubePlayerView.getHeight());
-
-                        PictureInPictureParams mParams =
-                                new PictureInPictureParams.Builder()
-                                        .setAspectRatio(rational)
-                                        .build();
-
-                        enterPictureInPictureMode(mParams);
+                        startPictureInPictureFeature();
                     } catch (IllegalStateException e) {
                         e.printStackTrace();
                     }
@@ -242,48 +259,48 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
             }
 
         });
-
-//        textViewDate.setText(youtubeDataModel.getPublishedAt());
-        if (!TextUtils.isEmpty(youtubeDataModel.getPublishedAt())) {
-            videoUploadDateView.setText(Localization.localizeDate(this, youtubeDataModel.getPublishedAt()));
-        }
-        mList_videos = (RecyclerView) findViewById(R.id.mList_videos);
-        mList_videos.setLayoutManager(new LinearLayoutManager(this));
-        mList_videos.hasFixedSize();
-
-        videoTitleRoot.setOnClickListener(this);
-        uploaderRootLayout.setOnClickListener(this);
-        img_bookmark.setOnClickListener(this);
-        checkBookmarkTag();
-        ViewCompat.setNestedScrollingEnabled(mList_videos, false);
-
-//        errorTextView.setText(message);
-        ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
-        if (connectionDetector.isConnectingToInternet()) {
-            animateView(errorButtonRetry, true, 600);
-            getRelatedVideoListFromServer("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
-                    "&part=contentDetails&relatedToVideoId=" + youtubeDataModel.getVideo_id() + "&maxResults=10&key=" + GOOGLE_YOUTUBE_API_KEY);
-        } else {
-            animateView(errorButtonRetry, false, 0);
-            animateView(errorPanelRoot, true, 300);
-        }
-
-        if (!checkPermissionForReadExtertalStorage()) {
-            try {
-                requestPermissionForReadExtertalStorage();
-            } catch (Exception e) {
-                e.printStackTrace();
+        {
+            if (!TextUtils.isEmpty(youtubeDataModel.getPublishedAt())) {
+                videoUploadDateView.setText(Localization.localizeDate(this, youtubeDataModel.getPublishedAt()));
             }
-        }
+            mList_videos = (RecyclerView) findViewById(R.id.mList_videos);
+            mList_videos.setLayoutManager(new LinearLayoutManager(this));
+            mList_videos.hasFixedSize();
 
-        setVideoStatisticsDetails();
+            videoTitleRoot.setOnClickListener(this);
+            uploaderRootLayout.setOnClickListener(this);
+            img_bookmark.setOnClickListener(this);
+            checkBookmarkTag();
+            ViewCompat.setNestedScrollingEnabled(mList_videos, false);
+        }
+        {
+            ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
+            if (connectionDetector.isConnectingToInternet()) {
+                animateView(errorButtonRetry, true, 600);
+                getRelatedVideoListFromServer("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video" +
+                        "&part=contentDetails&relatedToVideoId=" + youtubeDataModel.getVideo_id() + "&maxResults=10&key=" + GOOGLE_YOUTUBE_API_KEY);
+            } else {
+                animateView(errorButtonRetry, false, 0);
+                animateView(errorPanelRoot, true, 300);
+            }
+
+            if (!checkPermissionForReadExtertalStorage()) {
+                try {
+                    requestPermissionForReadExtertalStorage();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            setVideoStatisticsDetails();
+        }
     }
 
     private void startPictureInPictureFeature() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             System.out.println("mYoutubePlayerView.getWidth() = " + mYoutubePlayerView.getWidth());
-            System.out.println(" mYoutubePlayerView.getHeight() = " +  mYoutubePlayerView.getHeight());
+            System.out.println(" mYoutubePlayerView.getHeight() = " + mYoutubePlayerView.getHeight());
             Rational aspectRatio = new Rational(mYoutubePlayerView.getWidth(), mYoutubePlayerView.getHeight());
             pictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
             enterPictureInPictureMode(pictureInPictureParamsBuilder.build());
@@ -517,7 +534,7 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
 //                    snackbar.setActionTextColor(Color.RED);
                     // Changing action button text color
                     View sbView = snackbar.getView();
-                    TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+                    TextView textView = (TextView) sbView.findViewById(R.id.snackbar_text);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                     } else {
@@ -697,106 +714,6 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
                 "maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY + "&part=contentDetails";
         getRelatedVideoListFromServer(CHANNEL_GET_URL);
 
-    }
-
-    public void back_btn_pressed(View view) {
-        finish();
-    }
-
-//    public void playVideo(View view) {
-//        if (mYoutubePlayer != null) {
-//            if (mYoutubePlayer.isPlaying())
-//                mYoutubePlayer.pause();
-//            else
-//                mYoutubePlayer.play();
-//        }
-//    }
-
-    @Override
-    public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer youTubePlayer, boolean wasRestored) {
-        youTubePlayer.setPlayerStateChangeListener(playerStateChangeListener);
-        youTubePlayer.setPlaybackEventListener(playbackEventListener);
-        if (!wasRestored) {
-            youTubePlayer.loadVideo(youtubeDataModel.getVideo_id());
-        }
-        mYoutubePlayer = youTubePlayer;
-    }
-
-    private YouTubePlayer.PlaybackEventListener playbackEventListener = new YouTubePlayer.PlaybackEventListener() {
-        @Override
-        public void onPlaying() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                    && isInPictureInPictureMode()) {
-                updatePictureInPictureActions(
-                        R.drawable.ic_pause_24dp, mPause, CONTROL_TYPE_PAUSE, REQUEST_PAUSE);
-            }
-        }
-
-        @Override
-        public void onPaused() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                    && isInPictureInPictureMode()) {
-                updatePictureInPictureActions(
-                        R.drawable.ic_play_arrow_24dp, mPlay, CONTROL_TYPE_PLAY, REQUEST_PLAY);
-            }
-        }
-
-        @Override
-        public void onStopped() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                    && isInPictureInPictureMode()) {
-                updatePictureInPictureActions(
-                        R.drawable.ic_play_arrow_24dp, mPlay, CONTROL_TYPE_PLAY, REQUEST_PLAY);
-            }
-        }
-
-        @Override
-        public void onBuffering(boolean b) {
-
-        }
-
-        @Override
-        public void onSeekTo(int i) {
-
-        }
-    };
-
-    private YouTubePlayer.PlayerStateChangeListener playerStateChangeListener = new YouTubePlayer.PlayerStateChangeListener() {
-        @Override
-        public void onLoading() {
-
-        }
-
-        @Override
-        public void onLoaded(String s) {
-            mYoutubePlayer.play();
-        }
-
-        @Override
-        public void onAdStarted() {
-
-        }
-
-        @Override
-        public void onVideoStarted() {
-
-        }
-
-        @Override
-        public void onVideoEnded() {
-
-        }
-
-        @Override
-        public void onError(YouTubePlayer.ErrorReason errorReason) {
-
-        }
-    };
-
-    @Override
-    public void onInitializationFailure(YouTubePlayer.Provider provider, YouTubeInitializationResult youTubeInitializationResult) {
-        System.out.println("YouTubePlayer.Provider *****= " + provider);
-        System.out.println("youTubeInitializationResult = " + youTubeInitializationResult);
     }
 
     public void share_btn_pressed(View view) {
@@ -1027,8 +944,8 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         super.onResume();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
                 && !isInPictureInPictureMode()) {
-            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
-                mYoutubePlayer.play();
+//            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+//                mYoutubePlayer.play();
             // Continue playback...
         }
     }
@@ -1038,8 +955,8 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
         super.onPause();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
                 && isInPictureInPictureMode()) {
-            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
-                mYoutubePlayer.play();
+//            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+//                mYoutubePlayer.play();
             // Continue playback...
         }
     }
@@ -1059,16 +976,16 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode);
         if (isInPictureInPictureMode) {
-            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
-                mYoutubePlayer.play();
+//            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+//                mYoutubePlayer.play();
 //            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
 //                mYoutubePlayer.play();
             // Hide the full-screen UI (controls, etc.) while in picture-in-picture mode.
             System.out.println("isInPictureInPictureMode = " + isInPictureInPictureMode);
         } else {
             scrollLinearLayout.setVisibility(View.VISIBLE);
-            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
-                mYoutubePlayer.play();
+//            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
+//                mYoutubePlayer.play();
 //                mYoutubePlayer.play();
 //            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
 //                mYoutubePlayer.play();
@@ -1147,9 +1064,9 @@ public class VideoPlayerActivity extends YouTubeBaseActivity implements YouTubeP
             setPictureInPictureParams(pictureInPictureParamsBuilder.build());
         }
     }
+
     @Override
-    public void onPictureInPictureModeChanged(
-            boolean isInPictureInPictureMode, Configuration configuration) {
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, Configuration configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, configuration);
         if (isInPictureInPictureMode) {
             // Starts receiving events from action items in PiP mode.

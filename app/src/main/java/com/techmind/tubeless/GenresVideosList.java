@@ -1,58 +1,62 @@
 package com.techmind.tubeless;
 
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.Intent;
-import android.database.Cursor;
-import android.database.MatrixCursor;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.appcompat.widget.Toolbar;
-import android.util.Log;
-import android.view.LayoutInflater;
+
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
+import android.content.res.Resources;
+import android.graphics.Rect;
+
+import android.os.Handler;
+import android.util.TypedValue;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.appbar.CollapsingToolbarLayout;
+import com.techmind.tubeless.adapters.GenresAlbumsGridAdapter;
 import com.techmind.tubeless.adapters.MultiViewAdapter;
 import com.techmind.tubeless.config.AppController;
 import com.techmind.tubeless.config.ConstURL;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
 import com.techmind.tubeless.models.YoutubeDataModel;
+import com.techmind.tubeless.pojo.VideosGridCategory;
 import com.techmind.tubeless.util.ConnectionDetector;
-import android.widget.CursorAdapter;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-public class SearchActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
+public class GenresVideosList extends AppCompatActivity {
+    private RecyclerView recyclerView;
+//    private GenresAlbumsGridAdapter adapter;
+    private List<VideosGridCategory> albumList;
+
 
     private Toolbar mToolbar;
     FrameLayout mContentFrame;
@@ -77,9 +81,9 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
     private String kind;
     private String channelId = "";
     private EndlessRecyclerViewScrollListener scrollListener;
-    private CheckBox searchAnyCB;
-    private String searchQueryType;
-    private String queryStr;
+//    private CheckBox searchAnyCB;
+//    private String searchQueryType;
+//    private String queryStr;
     private String playListID = "";
     ArrayList<String> videosIdArrayList = new ArrayList<String>();
     ArrayList<String> channelIdArrayList = new ArrayList<String>();
@@ -92,173 +96,40 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
     private Button errorButtonRetry;
     private TextView errorTextView;
     private TextView listErrorMsg;
+    private String genresNameTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_home_page);
+        genresNameTitle=getIntent().getExtras().getString("genresName");
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ImageView backdrop = findViewById(R.id.backdrop);
+        backdrop.setBackgroundResource(Objects.requireNonNull(getIntent().getExtras()).getInt("genresThumbnail"));
+        TextView title = findViewById(R.id.title);
+        title.setText(genresNameTitle);
+        initCollapsingToolbar();
 
-        setContentView(R.layout.search_activity);
-        setUpToolbar();
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setDisplayHomeAsUpEnabled(true);
-
-        layoutView = LayoutInflater.from(this).inflate(R.layout.fragment_live, mContentFrame, false);
-        mList_videos = (RecyclerView) layoutView.findViewById(R.id.mList_videos);
-        searchAnyCB = layoutView.findViewById(R.id.searchAnyCB);
         listErrorMsg = findViewById(R.id.empty_view);
-        if (searchAnyCB.isChecked()) {
-            searchQueryType = "any";
-        } else {
-            searchQueryType = "channel";
-        }
-        searchAnyCB.setOnCheckedChangeListener(this);
-
+        mList_videos = (RecyclerView) findViewById(R.id.mList_videos);
         mList_videos.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         mList_videos.setLayoutManager(linearLayoutManager);
 
         mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setTitle("Searching...");
-        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         loadingProgressBar = findViewById(R.id.loading_progress_bar);
         errorPanelRoot = findViewById(R.id.error_panel);
         errorButtonRetry = findViewById(R.id.error_button_retry);
         errorTextView = findViewById(R.id.error_message_view);
 
-        SearchView searchView = (SearchView) findViewById(R.id.searchView);
-        searchView.setQuery("", true);
-        searchView.setFocusable(true);
-        searchView.setIconified(false);
-        searchView.requestFocusFromTouch();
-        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
-            @Override
-            public boolean onClose() {
-                return true;
-            }
-        });
         errorButtonRetry.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 refreshQuery();
             }
         });
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
 
-                queryStr = query;
-                //setting progress message so that users can understand what is happening
-                mProgressDialog.setMessage("Finding videos for " + queryStr.trim());
-                search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + queryStr + "&type=" + searchQueryType + "&maxResults=10&key="
-                        + ConstURL.GOOGLE_YOUTUBE_API_KEY;
-                refreshQuery();
-               /* if (!query.isEmpty() && search_type != null) {
-                    if(mProgressDialog!=null&&!mProgressDialog.isShowing()) {
-                        mProgressDialog.show();
-                    }
-                    mListData.clear();
-                    getSearchListFromServer(search_url);
-                } else {
-                    Toast.makeText(SearchActivity.this, "Select request Type", Toast.LENGTH_SHORT).show();
-                }*/
-
-                //getting instance of the keyboard or any other input from which user types
-                InputMethodManager imm = (InputMethodManager) SearchActivity.this.getSystemService(Context.INPUT_METHOD_SERVICE);
-                //hiding the keyboard once search button is clicked
-                imm.hideSoftInputFromWindow(SearchActivity.this.getCurrentFocus().getWindowToken(),
-                        InputMethodManager.RESULT_UNCHANGED_SHOWN);
-                System.out.println("title = " + query);
-                return false;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                if(newText.length() > 0) {
-                    newText = newText.replace(" ", "+");
-                    String url = "https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&client=firefox&q="
-                            + newText;
-                    System.out.println("**Suggest queries request** " + url);
-
-                    JsonArrayRequest req = new JsonArrayRequest(url,
-                            new Response.Listener<JSONArray>() {
-                                @Override
-                                public void onResponse(JSONArray response) {
-                                    try {
-                                        System.out.println("**Suggest queries response** " + response);
-                                        JSONArray jsonArraySuggestion = (JSONArray) response.get(1);
-                                        String[] suggestions = new String[10];
-                                        for (int i = 0; i < 10; i++) {
-                                            if (!jsonArraySuggestion.isNull(i)) {
-                                                suggestions[i] = jsonArraySuggestion.get(i).toString();
-                                            }
-                                        }
-                                        Log.d("Suggestions", Arrays.toString(suggestions));
-                                        //Cursor Adaptor
-                                        String[] columnNames = {"_id", "suggestion"};
-                                        MatrixCursor cursor = new MatrixCursor(columnNames);
-                                        String[] temp = new String[2];
-                                        int id = 0;
-                                        for (String item : suggestions) {
-                                            if (item != null) {
-                                                temp[0] = Integer.toString(id++);
-                                                temp[1] = item;
-                                                cursor.addRow(temp);
-                                            }
-                                        }
-                                        CursorAdapter cursorAdapter = new CursorAdapter(getApplicationContext(), cursor, false) {
-                                            @Override
-                                            public View newView(Context context, Cursor cursor, ViewGroup parent) {
-                                                return LayoutInflater.from(context).inflate(R.layout.search_suggestion_list_item, parent, false);
-                                            }
-
-                                            @Override
-                                            public void bindView(View view, Context context, Cursor cursor) {
-                                                final TextView suggest = (TextView) view.findViewById(R.id.suggest);
-                                                ImageView putInSearchBox = (ImageView) view.findViewById(R.id.put_in_search_box);
-                                                String body = cursor.getString(cursor.getColumnIndexOrThrow("suggestion"));
-                                                suggest.setTextColor(getResources().getColor(R.color.white));
-                                                suggest.setText(body);
-                                                suggest.setOnClickListener(new View.OnClickListener() {
-                                                    @Override
-                                                    public void onClick(View v) {
-                                                        searchView.setQuery(suggest.getText(), true);
-                                                        searchView.clearFocus();
-                                                    }
-                                                });
-                                                putInSearchBox.setOnClickListener(new View.OnClickListener() {
-                                                    @Override
-                                                    public void onClick(View v) {
-                                                        searchView.setQuery(suggest.getText(), false);
-                                                    }
-                                                });
-                                            }
-                                        };
-                                        searchView.setSuggestionsAdapter(cursorAdapter);
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
-
-                                }
-                            }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            VolleyLog.d("Tag", "Error: " + error.getMessage());
-                            System.out.println("**Error getMessage**" + error.getMessage());
-                            Toast.makeText(getApplicationContext(),
-                                    error.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-
-                    // Adding request to request queue
-                    AppController.getInstance().addToRequestQueue(req);
-
-                }
-                return true;
-            }
-        });
-//        initList(mListData);
-        mContentFrame = (FrameLayout) findViewById(R.id.nav_contentframe);
-        mContentFrame.addView(layoutView);
         scrollListener = new EndlessRecyclerViewScrollListener(linearLayoutManager) {
             @Override
             public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
@@ -277,26 +148,20 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
             }
         };
         mList_videos.addOnScrollListener(scrollListener);
-
+        refreshQuery();
     }
-
     private void refreshQuery() {
         ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
         if (connectionDetector.isConnectingToInternet()) {
             errorPanelRoot.setVisibility(View.INVISIBLE);
 
-            mProgressDialog.setMessage("Finding videos for " + queryStr.trim());
-            search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + queryStr + "&type=" + searchQueryType + "&maxResults=10&key="
+            search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&q=" + genresNameTitle+" "+" songs and music video" + "&type=video&maxResults=10&key="
                     + ConstURL.GOOGLE_YOUTUBE_API_KEY;
-            if (!queryStr.isEmpty() && search_type != null) {
                 if (mProgressDialog != null && !mProgressDialog.isShowing()) {
                     mProgressDialog.show();
                 }
                 mListData.clear();
                 getSearchListFromServer(search_url);
-            } else {
-                Toast.makeText(SearchActivity.this, "Select request Type", Toast.LENGTH_SHORT).show();
-            }
         } else {
             if (mListData.size() > 0) {
                 mListData.clear();
@@ -309,7 +174,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
 
     private void nextPageToken(String pageToken) {
         System.out.println("pageToken =************************ " + pageToken);
-        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&q=" + queryStr + "&pageToken=" + pageToken + "&type=" + searchQueryType +
+        CHANNEL_GET_URL = "https://www.googleapis.com/youtube/v3/search?&part=snippet&chart=mostPopular&q=" + genresNameTitle + " songs and music video" +"&pageToken=" + pageToken + "&type=video" +
                 "&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
         getEndlessListFromServer(CHANNEL_GET_URL);
         pageToken = null;
@@ -317,7 +182,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
 
     private void initList(ArrayList<YoutubeDataModel> mListData) {
         System.out.println("mListData = " + mListData);
-        adapter = new MultiViewAdapter(SearchActivity.this, mListData, mList_videos, new OnItemClickListener() {
+        adapter = new MultiViewAdapter(GenresVideosList.this, mListData, mList_videos, new OnItemClickListener() {
             private Intent intent;
 
             @Override
@@ -325,16 +190,16 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                 YoutubeDataModel youtubeDataModel = item;
                 if (youtubeDataModel.getKind().equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
 //                    &&requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.channelKey))
-                    intent = new Intent(SearchActivity.this, ChannelPlaylistActivityWithoutAnim.class);
+                    intent = new Intent(GenresVideosList.this, ChannelPlaylistActivityWithoutAnim.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
                     startActivity(intent);
 //                    requestTypeCallbackStr.equalsIgnoreCase(getString(R.string.videoKey))
                 } else if (youtubeDataModel.getKind().equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
-                    intent = new Intent(SearchActivity.this, VideoPlayerActivity.class);
+                    intent = new Intent(GenresVideosList.this, VideoPlayerActivity.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
                     startActivity(intent);
                 } else if (youtubeDataModel.getKind().equalsIgnoreCase(ConstURL.PLAYLIST_TYPE)) {
-                    intent = new Intent(SearchActivity.this, PlayListActivity.class);
+                    intent = new Intent(GenresVideosList.this, PlayListActivity.class);
                     intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
                     startActivity(intent);
                 }
@@ -364,15 +229,15 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                         } else {
                             listErrorMsg.setVisibility(View.VISIBLE);
                         }
-                            if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
-                                getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)), true);
-                            }
-                            if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
-                                getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)), true);
-                            }
-                            if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
-                                getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)), true);
-                            }
+                        if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
+                            getStatisticsResponse(videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)), true);
+                        }
+                        if (channelIdArrayList != null && channelIdArrayList.size() != 0) {
+                            getStatisticsResponse(channelIdStatisticsQuery(appendWithCommaIds(channelIdArrayList)), true);
+                        }
+                        if (playListIdArrayList != null && playListIdArrayList.size() != 0) {
+                            getStatisticsResponse(playListIdStatisticsQuery(appendWithCommaIds(playListIdArrayList)), true);
+                        }
 
 //                        hmMainListData.putAll(hmVideosStatisticsListData);
 //                        hmMainListData.putAll(hmChannelsStatisticsListData);
@@ -387,7 +252,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
             @Override
             public void onErrorResponse(VolleyError error) {
                 if (mProgressDialog.isShowing())
-                    Toast.makeText(SearchActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GenresVideosList.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
             }
         }) {
 
@@ -439,7 +304,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                 if (mProgressDialog.isShowing()) {
                     mProgressDialog.dismiss();
                 }
-                Toast.makeText(SearchActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+                Toast.makeText(GenresVideosList.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
             }
         }) {
 
@@ -570,7 +435,7 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                 if (mProgressDialog.isShowing()) {
                     mProgressDialog.dismiss();
                 }
-                Toast.makeText(SearchActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+                Toast.makeText(GenresVideosList.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
             }
         }) {
 
@@ -666,47 +531,75 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
         }
         return result.length() > 0 ? result.substring(0, result.length() - 1) : "";
     }
+/*        recyclerView = (RecyclerView) findViewById(R.id.mList_videos);
 
-    private void setUpToolbar() {
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
-        if (mToolbar != null) {
-            setSupportActionBar(mToolbar);
-        }
-    }
+        albumList = new ArrayList<>();
+        adapter = new GenresAlbumsGridAdapter(this, albumList);
 
-    @Override
-    public void onBackPressed() {
-        backPress();
-        super.onBackPressed();
-    }
+        RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 3);
+        recyclerView.setLayoutManager(mLayoutManager);
+        recyclerView.addItemDecoration(new GridSpacingItemDecoration(3, dpToPx(10), true));
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.setAdapter(adapter);
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        backPress();
-        return super.onSupportNavigateUp();
-    }
+        prepareAlbums();*/
 
-    private void backPress() {
-        Intent intentActivity = new Intent(this, MainActivity.class);
-        intentActivity.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(intentActivity);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-            overridePendingTransition(R.animator.left_to_right, R.animator.right_to_left);
-        }
-        finish();
-    }
+//        try {
+//            Picasso.get().load(R.drawable.cover).into((ImageView) findViewById(R.id.backdrop));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+/*    private void refreshQuery() {
+        ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
+        if (connectionDetector.isConnectingToInternet()) {
+            errorPanelRoot.setVisibility(View.INVISIBLE);
 
-    @Override
-    public void onCheckedChanged(CompoundButton compoundButton, boolean checkSearch) {
-        switch (compoundButton.getId()) {
-            case R.id.searchAnyCB:
-                if (checkSearch) {
-                    searchQueryType = "any";
-                } else {
-                    searchQueryType = "channel";
+            search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=" + genresNameTitle + "&type=video&maxResults=10&key="
+                    + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+                if (mProgressDialog != null && !mProgressDialog.isShowing()) {
+                    mProgressDialog.show();
                 }
-                break;
+                mListData.clear();
+                getSearchListFromServer(search_url);
+        } else {
+            if (mListData.size() > 0) {
+                mListData.clear();
+                adapter.notifyDataSetChanged();
+            }
+            errorPanelRoot.setVisibility(View.VISIBLE);
+            errorTextView.setText("No Network");
         }
+    }*/
+    /**
+     * Initializing collapsing toolbar
+     * Will show and hide the toolbar title on scroll
+     */
+    private void initCollapsingToolbar() {
+        final CollapsingToolbarLayout collapsingToolbar =
+                (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
+        collapsingToolbar.setTitle(" ");
+        AppBarLayout appBarLayout = (AppBarLayout) findViewById(R.id.appbar);
+        appBarLayout.setExpanded(true);
+
+        // hiding & showing the title when toolbar expanded & collapsed
+        appBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+            boolean isShow = false;
+            int scrollRange = -1;
+
+            @Override
+            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+                if (scrollRange == -1) {
+                    scrollRange = appBarLayout.getTotalScrollRange();
+                }
+                if (scrollRange + verticalOffset == 0) {
+                    collapsingToolbar.setTitle(getIntent().getExtras().getString("genresName"));
+                    collapsingToolbar.setBackgroundResource(getIntent().getExtras().getInt("genresThumbnail"));
+                    isShow = true;
+                } else if (isShow) {
+                    collapsingToolbar.setTitle(" ");
+                    isShow = false;
+                }
+            }
+        });
     }
 }

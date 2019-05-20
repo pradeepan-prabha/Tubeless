@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:toos="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/activityDetailsLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -14,19 +15,38 @@
     <!--android:layout_weight="1"-->
     <!--android:scaleType="centerCrop"-->
     <!--android:tag="image_tag" />-->
+
     <RelativeLayout
         android:id="@+id/youtube_playerLo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <com.google.android.youtube.player.YouTubePlayerView
-            android:id="@+id/youtube_player"
+        <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+            android:id="@+id/youtube_player_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:showFullScreenButton="true"
+            app:showYouTubeButton="false"
             tools:layout_height="200dp"/>
+<!--        <ImageButton
+            android:id="@+id/minimize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:background="?android:attr/selectableItemBackground"
+            android:contentDescription="@string/minimize"
+            android:padding="16dp"
+            android:src="@drawable/ic_minimize_24dp"
+            android:visibility="visible"/>-->
+        <!--<com.google.android.youtube.player.YouTubePlayerView-->
+            <!--android:id="@+id/youtube_player"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--tools:layout_height="200dp"/>-->
     </RelativeLayout>
 
-        <android.support.v4.widget.NestedScrollView
+        <androidx.core.widget.NestedScrollView
             android:id="@+id/nestedScrollView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -348,7 +368,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <android.support.v7.widget.RecyclerView
+                        <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/mList_videos"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content" />
@@ -364,5 +384,5 @@
                 <!--android:onClick="playVideo"-->
                 <!--android:src="@drawable/play"/>-->
             </LinearLayout>
-        </android.support.v4.widget.NestedScrollView>
+        </androidx.core.widget.NestedScrollView>
 </LinearLayout>
