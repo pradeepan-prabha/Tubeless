@@ -76,7 +76,7 @@ public class VideoPostAdapter extends RecyclerView.Adapter<VideoPostAdapter.Yout
             this.textViewTitle = (TextView) itemView.findViewById(R.id.textViewTitle);
             this.detail_description_view = (TextView) itemView.findViewById(R.id.detail_description_view);
 //            this.detail_upload_date_view = (TextView) itemView.findViewById(R.id.detail_upload_date_view);
-            this.ImageThumb = (ImageView) itemView.findViewById(R.id.ImageThumb);
+            this.ImageThumb = (ImageView) itemView.findViewById(R.id.imageThumb);
 
         }
 

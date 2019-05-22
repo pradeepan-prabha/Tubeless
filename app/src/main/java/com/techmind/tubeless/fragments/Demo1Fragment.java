@@ -126,7 +126,7 @@ public class Demo1Fragment extends Fragment {
     private void requestLive() {
 
         JSONObject jsonObjUserDetail = new JSONObject();
-        System.out.println("CHANNLE_GET_URL*************= " +ConstURL.CHANNEL_LIVE_GET_URL );
+        System.out.println("CHANNEL_GET_URL*************= " +ConstURL.CHANNEL_LIVE_GET_URL );
         //Retrieving response from the server
         JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, ConstURL.CHANNEL_LIVE_GET_URL, jsonObjUserDetail,
                 new Response.Listener<JSONObject>() {

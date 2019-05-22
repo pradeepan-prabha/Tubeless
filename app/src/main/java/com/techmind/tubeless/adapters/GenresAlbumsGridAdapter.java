@@ -50,10 +50,10 @@ public class GenresAlbumsGridAdapter extends RecyclerView.Adapter<GenresAlbumsGr
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if(viewGridOrHorizontal==1) {
             itemView = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.genres_card_grid_adaptor, parent, false);
+                    .inflate(R.layout.genres_card_grid_adapter, parent, false);
         }else {
             itemView = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.genres_card_horizontal_adaptor, parent, false);
+                    .inflate(R.layout.genres_card_horizontal_adapter, parent, false);
         }
 
         return new MyViewHolder(itemView);

@@ -3,6 +3,7 @@ package com.techmind.tubeless;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.Toolbar;
 
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,6 +30,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
+import com.techmind.tubeless.adapters.FavouriteGridViewAdapter;
 import com.techmind.tubeless.adapters.GenresAlbumsGridAdapter;
 import com.techmind.tubeless.adapters.MultiViewAdapter;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
@@ -51,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private DrawerLayout mDrawerLayout;
     NavigationView mNavigationView;
     FrameLayout mContentFrame;
-    private RecyclerView mList_videos = null;
+    //    private RecyclerView mList_videos = null;
     private MultiViewAdapter adapter = null;
     private static final String PREFERENCES_FILE = "mymaterialapp_settings";
     private static final String PREF_USER_LEARNED_DRAWER = "navigation_drawer_learned";
@@ -89,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
         setUpToolbar();
         setUpNavDrawer();
-        mList_videos = (RecyclerView) findViewById(R.id.mList_videos);
+//        mList_videos = (RecyclerView) findViewById(R.id.mList_videos);
         empty_view = (TextView) findViewById(R.id.empty_view);
         getBookMarkedDate();
 
@@ -97,13 +100,13 @@ public class MainActivity extends AppCompatActivity {
             mCurrentSelectedPosition = savedInstanceState.getInt(STATE_SELECTED_POSITION);
             mFromSavedInstanceState = true;
         }
-        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                getBookMarkedDate();
-            }
-        });
+//        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+//        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+//            @Override
+//            public void onRefresh() {
+//                getBookMarkedDate();
+//            }
+//        });
         errorButtonRetry.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -154,12 +157,134 @@ public class MainActivity extends AppCompatActivity {
         genresAlbumsHorizontalRecyclerView = (RecyclerView) findViewById(R.id.genresAlbumsHorizontalRV);
         albumList = new ArrayList<>();
         //Horizontal view=0 change view
-        genresAlbumsGridAdapter = new GenresAlbumsGridAdapter(this, albumList,0);
+        genresAlbumsGridAdapter = new GenresAlbumsGridAdapter(this, albumList, 0);
+        prepareAlbums();
         genresAlbumsHorizontalRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         genresAlbumsHorizontalRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        genresAlbumsHorizontalRecyclerView.setNestedScrollingEnabled(false);
         genresAlbumsHorizontalRecyclerView.setAdapter(genresAlbumsGridAdapter);
 
-        prepareAlbums();
+    }
+
+    private void prepareFavouriteVideosHorizontalRV(ArrayList<YoutubeDataModel> mListData) {
+        if (mListData != null && mListData.size() > 0) {
+            findViewById(R.id.favouriteVideosLayout).setVisibility(View.VISIBLE);
+            ArrayList<YoutubeDataModel> videosBookmarkedList = new ArrayList<YoutubeDataModel>();
+            for (YoutubeDataModel youtubeDataModel : mListData) {
+                if ("youtube#video".equals(youtubeDataModel.getKind())) {
+                    videosBookmarkedList.add(youtubeDataModel);
+                }
+            }
+            RecyclerView favouriteVideosHorizontalRV = (RecyclerView) findViewById(R.id.favouriteVideosHorizontalRV);
+            albumList = new ArrayList<>();
+            //Horizontal view=0 change view
+            FavouriteGridViewAdapter bookmarkVideosGridAdapter = new FavouriteGridViewAdapter(this, videosBookmarkedList, videosBookmarkedList, new OnItemClickListener() {
+                @Override
+                public void onItemClick(YoutubeDataModel item) {
+                    onItemClickNavigation(item);
+                }
+            });
+            RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
+            favouriteVideosHorizontalRV.setLayoutManager(mLayoutManager);
+            favouriteVideosHorizontalRV.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(5), true));
+            favouriteVideosHorizontalRV.setItemAnimator(new DefaultItemAnimator());
+            favouriteVideosHorizontalRV.setNestedScrollingEnabled(false);
+            favouriteVideosHorizontalRV.setAdapter(bookmarkVideosGridAdapter);
+        } else {
+            findViewById(R.id.favouriteChannelLayout).setVisibility(View.GONE);
+        }
+    }
+
+    private void prepareFavouriteChannelHorizontalRV(ArrayList<YoutubeDataModel> mListData) {
+        if (mListData != null && mListData.size() > 0) {
+            findViewById(R.id.favouriteChannelLayout).setVisibility(View.VISIBLE);
+            ArrayList<YoutubeDataModel> videosBookmarkedList = new ArrayList<YoutubeDataModel>();
+            for (YoutubeDataModel youtubeDataModel : mListData) {
+                if ("youtube#channel".equals(youtubeDataModel.getKind())) {
+                    videosBookmarkedList.add(youtubeDataModel);
+                }
+            }
+            RecyclerView favouriteChannelHorizontalRV = (RecyclerView) findViewById(R.id.favouriteChannelHorizontalRV);
+            albumList = new ArrayList<>();
+            //Horizontal view=0 change view
+            FavouriteGridViewAdapter bookmarkVideosGridAdapter = new FavouriteGridViewAdapter(this, videosBookmarkedList, videosBookmarkedList, new OnItemClickListener() {
+                @Override
+                public void onItemClick(YoutubeDataModel item) {
+                    onItemClickNavigation(item);
+                }
+            });
+            RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
+            favouriteChannelHorizontalRV.setLayoutManager(mLayoutManager);
+            favouriteChannelHorizontalRV.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(5), true));
+            favouriteChannelHorizontalRV.setItemAnimator(new DefaultItemAnimator());
+            favouriteChannelHorizontalRV.setNestedScrollingEnabled(false);
+            favouriteChannelHorizontalRV.setAdapter(bookmarkVideosGridAdapter);
+        } else {
+            findViewById(R.id.favouriteChannelLayout).setVisibility(View.GONE);
+        }
+    }
+
+    private void prepareFavouritePlaylistHorizontalRV(ArrayList<YoutubeDataModel> mListData) {
+        if (mListData != null && mListData.size() > 0) {
+            findViewById(R.id.favouritePlaylistLayout).setVisibility(View.VISIBLE);
+            RecyclerView favouritePlaylistHorizontalRV = (RecyclerView) findViewById(R.id.favouritePlaylistHorizontalRV);
+            ArrayList<YoutubeDataModel> videosBookmarkedList = new ArrayList<YoutubeDataModel>();
+            for (YoutubeDataModel youtubeDataModel : mListData) {
+                if ("youtube#playlist".equals(youtubeDataModel.getKind())) {
+                    videosBookmarkedList.add(youtubeDataModel);
+                }
+            }
+            albumList = new ArrayList<>();
+            //Horizontal view=0 change view
+            FavouriteGridViewAdapter bookmarkVideosGridAdapter = new FavouriteGridViewAdapter(this, videosBookmarkedList, videosBookmarkedList, new OnItemClickListener() {
+                @Override
+                public void onItemClick(YoutubeDataModel item) {
+                    onItemClickNavigation(item);
+                }
+            });
+            RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
+            favouritePlaylistHorizontalRV.setLayoutManager(mLayoutManager);
+            favouritePlaylistHorizontalRV.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(5), true));
+            favouritePlaylistHorizontalRV.setItemAnimator(new DefaultItemAnimator());
+            favouritePlaylistHorizontalRV.setNestedScrollingEnabled(false);
+            favouritePlaylistHorizontalRV.setAdapter(bookmarkVideosGridAdapter);
+        } else {
+            findViewById(R.id.favouriteChannelLayout).setVisibility(View.GONE);
+        }
+
+    }
+
+    private void onItemClickNavigation(YoutubeDataModel youtubeDataModel) {
+        Intent intent;
+
+        if (youtubeDataModel.getKind().equals(CHANNEL_TYPE)) {
+            intent = new Intent(MainActivity.this, ChannelPlaylistActivityWithoutAnim.class);
+            intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+            intent.putExtra("activity", "MainActivity");
+            startActivity(intent);
+        } else if (youtubeDataModel.getKind().equals(VIDEOS_TYPE)) {
+            intent = new Intent(MainActivity.this, VideoPlayerActivity.class);
+            intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+            intent.putExtra("activity", "MainActivity");
+            startActivity(intent);
+        } else if (youtubeDataModel.getKind().equals(PLAYLIST_TYPE)) {
+            intent = new Intent(MainActivity.this, PlayListActivity.class);
+            intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
+            intent.putExtra("activity", "MainActivity");
+            startActivity(intent);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+            overridePendingTransition(R.animator.right_in, R.animator.left_out);
+        }
+
+    }
+
+    /**
+     * Converting dp to pixel
+     */
+    private int dpToPx(int dp) {
+        Resources r = getResources();
+        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, r.getDisplayMetrics()));
     }
 
     private void getBookMarkedDate() {
@@ -189,40 +314,24 @@ public class MainActivity extends AppCompatActivity {
             mSwipeRefreshLayout.setRefreshing(false);
         }
         if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
+
+        prepareFavouriteVideosHorizontalRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
+        prepareFavouriteChannelHorizontalRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
+        prepareFavouritePlaylistHorizontalRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
     }
 
     private void initList(ArrayList<YoutubeDataModel> mListData) {
-        mList_videos.setLayoutManager(new LinearLayoutManager(this));
+    /*    mList_videos.setLayoutManager(new LinearLayoutManager(this));
         adapter = new MultiViewAdapter(this, mListData, mList_videos, new OnItemClickListener() {
             private Intent intent;
 
             @Override
             public void onItemClick(YoutubeDataModel item) {
-                YoutubeDataModel youtubeDataModel = item;
-                if (youtubeDataModel.getKind().equals(CHANNEL_TYPE)) {
-                    intent = new Intent(MainActivity.this, ChannelPlaylistActivityWithoutAnim.class);
-                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
-                    intent.putExtra("activity", "MainActivity");
-                    startActivity(intent);
-                } else if (youtubeDataModel.getKind().equals(VIDEOS_TYPE)) {
-                    intent = new Intent(MainActivity.this, VideoPlayerActivity.class);
-                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
-                    intent.putExtra("activity", "MainActivity");
-                    startActivity(intent);
-                } else if (youtubeDataModel.getKind().equals(PLAYLIST_TYPE)) {
-                    intent = new Intent(MainActivity.this, PlayListActivity.class);
-                    intent.putExtra(YoutubeDataModel.class.toString(), youtubeDataModel);
-                    intent.putExtra("activity", "MainActivity");
-                    startActivity(intent);
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-                    overridePendingTransition(R.animator.right_in, R.animator.left_out);
-                }
-
+                onItemClickNavigation(item);
             }
         });
         mList_videos.setAdapter(adapter);
-//        mList_videos.smoothScrollToPosition(previousListPosition);
+//        mList_videos.smoothScrollToPosition(previousListPosition);*/
     }
 
     @Override
@@ -330,7 +439,7 @@ public class MainActivity extends AppCompatActivity {
                 coverGrandientColor++;
             }
         }
-        adapter.notifyDataSetChanged();
+        genresAlbumsGridAdapter.notifyDataSetChanged();
     }
 }
     /*

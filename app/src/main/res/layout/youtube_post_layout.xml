@@ -22,7 +22,7 @@
 
             <ImageView
                 android:background="@color/shadow"
-                android:id="@+id/ImageThumb"
+                android:id="@+id/imageThumb"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_alignParentStart="true"

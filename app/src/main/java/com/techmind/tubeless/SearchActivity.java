@@ -153,11 +153,11 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                         + ConstURL.GOOGLE_YOUTUBE_API_KEY;
                 refreshQuery();
                /* if (!query.isEmpty() && search_type != null) {
-                    if(mProgressDialog!=null&&!mProgressDialog.isShowing()) {
-                        mProgressDialog.show();
                     }
                     mListData.clear();
                     getSearchListFromServer(search_url);
+                    if(mProgressDialog!=null&&!mProgressDialog.isShowing()) {
+                        mProgressDialog.show();
                 } else {
                     Toast.makeText(SearchActivity.this, "Select request Type", Toast.LENGTH_SHORT).show();
                 }*/
@@ -237,7 +237,6 @@ public class SearchActivity extends AppCompatActivity implements CompoundButton.
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
-
                                 }
                             }, new Response.ErrorListener() {
                         @Override
