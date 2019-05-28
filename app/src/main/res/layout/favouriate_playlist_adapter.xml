@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/itemRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:orientation="vertical">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        card_view:cardCornerRadius="10dp"
+        card_view:cardElevation="6dp"
+        card_view:cardMaxElevation="10dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/itemThumbnailView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:contentDescription="@string/list_thumbnail_view_description"
+                android:scaleType="fitXY"
+                android:src="@drawable/dummy_thumbnail_playlist"
+                tools:ignore="RtlHardcoded" />
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="5dp">
+
+        <TextView
+            android:id="@+id/itemTitleView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textSize="12dp"
+            tools:ignore="RtlHardcoded"
+            tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tristique vitae sem vitae blanditLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum" />
+
+        <TextView
+            android:id="@+id/itemUploaderView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/itemTitleView"
+            android:layout_toRightOf="@+id/itemThumbnailView"
+            android:lines="1"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textSize="10dp"
+            tools:ignore="RtlHardcoded"
+            tools:text="Uploader" />
+
+        <TextView
+            android:id="@+id/itemPlaylistCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/itemUploaderView"
+            android:layout_toRightOf="@+id/itemThumbnailView"
+            android:lines="1"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textSize="10dp"
+            tools:ignore="RtlHardcoded"
+            tools:text="Uploader" />
+    </LinearLayout>
+</LinearLayout>

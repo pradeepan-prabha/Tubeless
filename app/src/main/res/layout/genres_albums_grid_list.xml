@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/tools"
+    android:id="@+id/main_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="@dimen/card_margin"
+        android:elevation="15dp"
+        card_view:cardCornerRadius="5dp">
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/album_title_padding"
+        android:paddingTop="@dimen/album_title_padding"
+        android:paddingRight="@dimen/album_title_padding"
+        android:text="Musics"
+        android:padding="10sp"
+        android:textStyle="bold"
+        android:textColor="@color/gray"
+        android:textSize="20sp"
+        />
+    </androidx.cardview.widget.CardView>
+
+    <include layout="@layout/content_home_page" />
+
+</LinearLayout>

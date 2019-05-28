@@ -28,7 +28,7 @@
             app:showFullScreenButton="true"
             app:showYouTubeButton="false"
             tools:layout_height="200dp"/>
-<!--        <ImageButton
+        <ImageButton
             android:id="@+id/minimize"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -38,7 +38,7 @@
             android:contentDescription="@string/minimize"
             android:padding="16dp"
             android:src="@drawable/ic_minimize_24dp"
-            android:visibility="visible"/>-->
+            android:visibility="visible"/>
         <!--<com.google.android.youtube.player.YouTubePlayerView-->
             <!--android:id="@+id/youtube_player"-->
             <!--android:layout_width="match_parent"-->
@@ -257,7 +257,7 @@
                         android:scaleType="fitCenter"
                         android:background="?android:attr/selectableItemBackground"
                         android:src="@drawable/ic_download_outline"
-                        android:visibility="visible" />
+                        android:visibility="gone" />
 
                     <ImageButton
                         android:layout_weight="2"
