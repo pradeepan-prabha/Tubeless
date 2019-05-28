@@ -7,7 +7,11 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.core.view.GravityCompat;
@@ -26,21 +30,31 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 import com.techmind.tubeless.adapters.FavouriteGridViewAdapter;
 import com.techmind.tubeless.adapters.GenresAlbumsGridAdapter;
 import com.techmind.tubeless.adapters.MultiViewAdapter;
+import com.techmind.tubeless.config.AppController;
+import com.techmind.tubeless.config.ConstURL;
 import com.techmind.tubeless.interfaces.OnItemClickListener;
 import com.techmind.tubeless.models.YoutubeDataModel;
 import com.techmind.tubeless.pojo.VideosGridCategory;
 import com.techmind.tubeless.util.ConnectionDetector;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.techmind.tubeless.config.ConstURL.CHANNEL_TYPE;
 import static com.techmind.tubeless.config.ConstURL.PLAYLIST_TYPE;
@@ -64,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean mFromSavedInstanceState;
     private int mCurrentSelectedPosition;
     private TextView empty_view;
-    Toolbar toolbar;
     private ProgressBar loadingProgressBar;
     private View errorPanelRoot;
     private Button errorButtonRetry;
@@ -72,41 +85,71 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private List<YoutubeDataModel> youtubeDataModelsList;
     private List<VideosGridCategory> albumList;
-    private RecyclerView genresAlbumsHorizontalRecyclerView;
     private GenresAlbumsGridAdapter genresAlbumsGridAdapter;
-    private TextView moreGenresTextView;
+
+
+    private String pageToken;
+
+    JSONObject jsonObjUserDetail = new JSONObject();
+    private String kind;
+    private String channelId = "";
+    private String playListID = "";
+    ArrayList<String> videosIdArrayList = new ArrayList<String>();
+    ArrayList<String> channelIdArrayList = new ArrayList<String>();
+    ArrayList<String> playListIdArrayList = new ArrayList<String>();
+    private HashMap<String, YoutubeDataModel> hmTempListData = new HashMap<>();
+    private View trending_video_categories;
+    private View musics_category_offline;
+    private View tvShow_video_categories;
+    private View movies_video_categories;
+    private View news_video_categories;
+    private View comedy_video_categories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nav_drawer);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.nav_drawer);
 //        FloatingActionButton fab = findViewById(R.id.fab);
         mUserLearnedDrawer = Boolean.valueOf(readSharedSetting(this, PREF_USER_LEARNED_DRAWER, "false"));
+
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.nav_drawer);
         mNavigationView = (NavigationView) findViewById(R.id.nav_view);
         loadingProgressBar = findViewById(R.id.loading_progress_bar);
         errorPanelRoot = findViewById(R.id.error_panel);
         errorButtonRetry = findViewById(R.id.error_button_retry);
         errorTextView = findViewById(R.id.error_message_view);
-        moreGenresTextView = findViewById(R.id.moreGenresTextView);
+        empty_view = (TextView) findViewById(R.id.empty_view);
+        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
+        LinearLayout linearLayoutCategoryContainer = findViewById(R.id.linearLayoutCategoryContainer);
+        musics_category_offline = getLayoutInflater().inflate(R.layout.musics_category_offline, null);
+        trending_video_categories = getLayoutInflater().inflate(R.layout.dynamic_home_video_categories, null);
+        tvShow_video_categories = getLayoutInflater().inflate(R.layout.dynamic_home_video_categories, null);
+        movies_video_categories = getLayoutInflater().inflate(R.layout.dynamic_home_video_categories, null);
+        news_video_categories = getLayoutInflater().inflate(R.layout.dynamic_home_video_categories, null);
+        comedy_video_categories = getLayoutInflater().inflate(R.layout.dynamic_home_video_categories, null);
+        TextView moreGenresTextView = musics_category_offline.findViewById(R.id.moreGenresTextView);
+//        linearLayoutCategoryContainer.addView(trending_video_categories,1);
+        linearLayoutCategoryContainer.addView(musics_category_offline,0);
+//        linearLayoutCategoryContainer.addView(tvShow_video_categories);
+//        linearLayoutCategoryContainer.addView(movies_video_categories);
+//        linearLayoutCategoryContainer.addView(news_video_categories);
+//        linearLayoutCategoryContainer.addView(comedy_video_categories);
         setUpToolbar();
         setUpNavDrawer();
-//        mList_videos = (RecyclerView) findViewById(R.id.mList_videos);
-        empty_view = (TextView) findViewById(R.id.empty_view);
+
         getBookMarkedDate();
 
         if (savedInstanceState != null) {
             mCurrentSelectedPosition = savedInstanceState.getInt(STATE_SELECTED_POSITION);
             mFromSavedInstanceState = true;
         }
-//        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-//        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-//            @Override
-//            public void onRefresh() {
-//                getBookMarkedDate();
-//            }
-//        });
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                getBookMarkedDate();
+            }
+        });
         errorButtonRetry.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -140,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-        prepareGenresAlbums();
+
 //        fab.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View view) {
@@ -154,28 +197,35 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void prepareGenresAlbums() {
-        genresAlbumsHorizontalRecyclerView = (RecyclerView) findViewById(R.id.genresAlbumsHorizontalRV);
-        albumList = new ArrayList<>();
+        RecyclerView genresAlbumsHorizontalRecyclerView = (RecyclerView) musics_category_offline.findViewById(R.id.genresAlbumsHorizontalRV);
+        prepareAlbums();
         //Horizontal view=0 change view
         genresAlbumsGridAdapter = new GenresAlbumsGridAdapter(this, albumList, 0);
-        prepareAlbums();
-        genresAlbumsHorizontalRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        genresAlbumsHorizontalRecyclerView.setItemAnimator(new DefaultItemAnimator());
-        genresAlbumsHorizontalRecyclerView.setNestedScrollingEnabled(false);
-        genresAlbumsHorizontalRecyclerView.setAdapter(genresAlbumsGridAdapter);
-
+        if (albumList != null) {
+            genresAlbumsHorizontalRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+            genresAlbumsHorizontalRecyclerView.setItemAnimator(new DefaultItemAnimator());
+            genresAlbumsHorizontalRecyclerView.setNestedScrollingEnabled(false);
+            genresAlbumsHorizontalRecyclerView.setAdapter(genresAlbumsGridAdapter);
+        } else {
+            musics_category_offline.findViewById(R.id.musicsCategoryLayout).setVisibility(View.GONE);
+        }
     }
 
-    private void prepareFavouriteVideosHorizontalRV(ArrayList<YoutubeDataModel> mListData) {
+    private void prepareVideosGridRV(ArrayList<YoutubeDataModel> mListData, RecyclerView recyclerView,
+                                     LinearLayout contentLayout, TextView videosTitleTv, String title) {
+        if (videosTitleTv != null) {
+            videosTitleTv.setText(title);
+        }
+        System.out.println("**Prepare Videos Grid RV ListData**" + "videosTitleTv=" + title );
         if (mListData != null && mListData.size() > 0) {
-            findViewById(R.id.favouriteVideosLayout).setVisibility(View.VISIBLE);
+            System.out.println("**Prepare Videos Grid RV ListData** mListData" + mListData.size());
+            contentLayout.setVisibility(View.VISIBLE);
             ArrayList<YoutubeDataModel> videosBookmarkedList = new ArrayList<YoutubeDataModel>();
             for (YoutubeDataModel youtubeDataModel : mListData) {
                 if ("youtube#video".equals(youtubeDataModel.getKind())) {
                     videosBookmarkedList.add(youtubeDataModel);
                 }
             }
-            RecyclerView favouriteVideosHorizontalRV = (RecyclerView) findViewById(R.id.favouriteVideosHorizontalRV);
             albumList = new ArrayList<>();
             //Horizontal view=0 change view
             FavouriteGridViewAdapter bookmarkVideosGridAdapter = new FavouriteGridViewAdapter(this, videosBookmarkedList, videosBookmarkedList, new OnItemClickListener() {
@@ -185,17 +235,17 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
-            favouriteVideosHorizontalRV.setLayoutManager(mLayoutManager);
-            favouriteVideosHorizontalRV.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(5), true));
-            favouriteVideosHorizontalRV.setItemAnimator(new DefaultItemAnimator());
-            favouriteVideosHorizontalRV.setNestedScrollingEnabled(false);
-            favouriteVideosHorizontalRV.setAdapter(bookmarkVideosGridAdapter);
+            recyclerView.setLayoutManager(mLayoutManager);
+            recyclerView.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(4), true));
+            recyclerView.setItemAnimator(new DefaultItemAnimator());
+            recyclerView.setNestedScrollingEnabled(false);
+            recyclerView.setAdapter(bookmarkVideosGridAdapter);
         } else {
-            findViewById(R.id.favouriteChannelLayout).setVisibility(View.GONE);
+            contentLayout.setVisibility(View.GONE);
         }
     }
 
-    private void prepareFavouriteChannelHorizontalRV(ArrayList<YoutubeDataModel> mListData) {
+    private void prepareFavouriteChannelGridRV(ArrayList<YoutubeDataModel> mListData) {
         if (mListData != null && mListData.size() > 0) {
             findViewById(R.id.favouriteChannelLayout).setVisibility(View.VISIBLE);
             ArrayList<YoutubeDataModel> videosBookmarkedList = new ArrayList<YoutubeDataModel>();
@@ -215,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
             });
             RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
             favouriteChannelHorizontalRV.setLayoutManager(mLayoutManager);
-            favouriteChannelHorizontalRV.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(5), true));
+            favouriteChannelHorizontalRV.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(4), true));
             favouriteChannelHorizontalRV.setItemAnimator(new DefaultItemAnimator());
             favouriteChannelHorizontalRV.setNestedScrollingEnabled(false);
             favouriteChannelHorizontalRV.setAdapter(bookmarkVideosGridAdapter);
@@ -224,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void prepareFavouritePlaylistHorizontalRV(ArrayList<YoutubeDataModel> mListData) {
+    private void prepareFavouritePlaylistGridRV(ArrayList<YoutubeDataModel> mListData) {
         if (mListData != null && mListData.size() > 0) {
             findViewById(R.id.favouritePlaylistLayout).setVisibility(View.VISIBLE);
             RecyclerView favouritePlaylistHorizontalRV = (RecyclerView) findViewById(R.id.favouritePlaylistHorizontalRV);
@@ -244,12 +294,12 @@ public class MainActivity extends AppCompatActivity {
             });
             RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
             favouritePlaylistHorizontalRV.setLayoutManager(mLayoutManager);
-            favouritePlaylistHorizontalRV.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(5), true));
+            favouritePlaylistHorizontalRV.addItemDecoration(new GenresAlbumsGridList.GridSpacingItemDecoration(2, dpToPx(4), true));
             favouritePlaylistHorizontalRV.setItemAnimator(new DefaultItemAnimator());
             favouritePlaylistHorizontalRV.setNestedScrollingEnabled(false);
             favouritePlaylistHorizontalRV.setAdapter(bookmarkVideosGridAdapter);
         } else {
-            findViewById(R.id.favouriteChannelLayout).setVisibility(View.GONE);
+            findViewById(R.id.favouritePlaylistLayout).setVisibility(View.GONE);
         }
 
     }
@@ -291,6 +341,8 @@ public class MainActivity extends AppCompatActivity {
         ConnectionDetector connectionDetector = new ConnectionDetector(getApplicationContext());
         if (connectionDetector.isConnectingToInternet()) {
             errorPanelRoot.setVisibility(View.GONE);
+            //Music category offline grid view
+            prepareGenresAlbums();
             // Get all posts from database
             youtubeDataModelsList = PostsDatabaseHelper.getInstance(getApplicationContext()).getAllPosts();
             if (youtubeDataModelsList.size() > 0) {
@@ -298,14 +350,47 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 empty_view.setVisibility(View.VISIBLE);
             }
-//        for (YoutubeDataModel youtubeDataModelsIndex : youtubeDataModelsList) {
-//        }
-            initList((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
+
+            //Trending Videos
+           /* ArrayList<YoutubeDataModel> trendingVideoListData = new ArrayList<>();
+            HashMap<String, YoutubeDataModel> trendingVideoHmData = new HashMap<>();
+            String trendingUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+            getSearchListFromServer(trendingUrl, "Trending Videos",
+                    trending_video_categories.findViewById(R.id.trendingVideosRc),
+                    trending_video_categories.findViewById(R.id.trendingVideosLayout),
+                    trending_video_categories.findViewById(R.id.dynamicVideosTitle), trendingVideoListData, trendingVideoHmData);*/
+
+/*            //Tv Shows
+            ArrayList<YoutubeDataModel> tvShowsVideoListData = new ArrayList<>();
+            HashMap<String, YoutubeDataModel> tvShowsVideoHmData = new HashMap<>();
+            String tvShowsUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&q=Tv shows&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+            getSearchListFromServer(tvShowsUrl, "Tv Shows", tvShow_video_categories.findViewById(R.id.trendingVideosRc), tvShow_video_categories.findViewById(R.id.trendingVideosLayout),
+                    tvShow_video_categories.findViewById(R.id.dynamicVideosTitle), tvShowsVideoListData, tvShowsVideoHmData);
+
+            //Comedy
+            ArrayList<YoutubeDataModel> comedyVideoListData = new ArrayList<>();
+            HashMap<String, YoutubeDataModel> comedyVideoHmData = new HashMap<>();
+            String comedyUrl= "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&q=comedy&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+            getSearchListFromServer(comedyUrl, "Comedy", comedy_video_categories.findViewById(R.id.trendingVideosRc),
+                    comedy_video_categories.findViewById(R.id.trendingVideosLayout),
+                    comedy_video_categories.findViewById(R.id.dynamicVideosTitle), comedyVideoListData, comedyVideoHmData);
+
+            //News
+            ArrayList<YoutubeDataModel> newsVideoListData = new ArrayList<>();
+            HashMap<String, YoutubeDataModel> newsVideoHmData = new HashMap<>();
+            String newsUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&q=news&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+            getSearchListFromServer(newsUrl, "News", news_video_categories.findViewById(R.id.trendingVideosRc), news_video_categories.findViewById(R.id.trendingVideosLayout),
+                    news_video_categories.findViewById(R.id.dynamicVideosTitle), newsVideoListData, newsVideoHmData);
+            //Movies
+            ArrayList<YoutubeDataModel> moviesVideoListData = new ArrayList<>();
+            HashMap<String, YoutubeDataModel> moviesVideoHmData = new HashMap<>();
+            String moviesUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&q=movies&maxResults=10&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+            getSearchListFromServer(moviesUrl, "Movies", movies_video_categories.findViewById(R.id.trendingVideosRc), movies_video_categories.findViewById(R.id.trendingVideosLayout),
+                    movies_video_categories.findViewById(R.id.dynamicVideosTitle), moviesVideoListData, moviesVideoHmData);*/
 
         } else {
             if (youtubeDataModelsList != null && youtubeDataModelsList.size() > 0) {
                 youtubeDataModelsList.clear();
-                adapter.notifyDataSetChanged();
             }
             errorPanelRoot.setVisibility(View.VISIBLE);
             errorTextView.setText("No Network");
@@ -314,24 +399,15 @@ public class MainActivity extends AppCompatActivity {
             mSwipeRefreshLayout.setRefreshing(false);
         }
         if (loadingProgressBar != null) animateView(loadingProgressBar, false, 0);
+//        String url=search_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&chart=mostPopular&q=" + genresNameTitle+" "+" songs and music video" + "&type=video&maxResults=10&key="
 
-        prepareFavouriteVideosHorizontalRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
-        prepareFavouriteChannelHorizontalRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
-        prepareFavouritePlaylistHorizontalRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
-    }
-
-    private void initList(ArrayList<YoutubeDataModel> mListData) {
-    /*    mList_videos.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new MultiViewAdapter(this, mListData, mList_videos, new OnItemClickListener() {
-            private Intent intent;
-
-            @Override
-            public void onItemClick(YoutubeDataModel item) {
-                onItemClickNavigation(item);
-            }
-        });
-        mList_videos.setAdapter(adapter);
-//        mList_videos.smoothScrollToPosition(previousListPosition);*/
+//        Favourite videos
+        prepareVideosGridRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList, findViewById(R.id.favouriteVideosHorizontalRV)
+                , findViewById(R.id.favouriteVideosLayout), null, "");
+//        FavouriteChannel
+        prepareFavouriteChannelGridRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
+//        FavouritePlaylist
+        prepareFavouritePlaylistGridRV((ArrayList<YoutubeDataModel>) youtubeDataModelsList);
     }
 
     @Override
@@ -414,6 +490,7 @@ public class MainActivity extends AppCompatActivity {
      * Adding few albums for testing
      */
     private void prepareAlbums() {
+        albumList = new ArrayList<>();
         int[] covers = new int[]{
                 R.drawable.gradient_1,
                 R.drawable.gradient_2,
@@ -439,409 +516,242 @@ public class MainActivity extends AppCompatActivity {
                 coverGrandientColor++;
             }
         }
-        genresAlbumsGridAdapter.notifyDataSetChanged();
+        if (genresAlbumsGridAdapter != null) {
+            genresAlbumsGridAdapter.notifyDataSetChanged();
+        }
     }
-}
-    /*
 
-    private static final String ACTION_MEDIA_CONTROL = "media_control";
-import android.app.PendingIntent;
-import android.app.PictureInPictureParams;
-import android.app.RemoteAction;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.res.Configuration;
-import android.graphics.drawable.Icon;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.RequiresApi;
-import android.support.v7.app.AppCompatActivity;
-import android.util.Rational;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ScrollView;
 
-import com.google.android.youtube.player.YouTubeBaseActivity;
-import com.google.android.youtube.player.YouTubeInitializationResult;
-import com.google.android.youtube.player.YouTubePlayer;
-import com.google.android.youtube.player.YouTubePlayerView;
-import com.techmind.tubeless.widget.MovieView;
-
-import java.util.ArrayList;
-
-import static com.techmind.tubeless.config.ConstURL.GOOGLE_YOUTUBE_API_KEY;
-
-//* Demonstrates usage of Picture-in-Picture mode on phones and tablets.
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public class MainActivity extends YouTubeBaseActivity implements YouTubePlayer.OnInitializedListener {
-
-//* Intent action for media controls from Picture-in-Picture mode.
-
-    }
-    public static final boolean DEBUG = !BuildConfig.BUILD_TYPE.equals("release");
-
-//* Intent extra for media controls from Picture-in-Picture mode.
-
-    private static final String EXTRA_CONTROL_TYPE = "control_type";
-
-//* The request code for play action PendingIntent.
-
-    private static final int REQUEST_PLAY = 1;
-
-//* The request code for pause action PendingIntent.
-
-    private static final int REQUEST_PAUSE = 2;
-
-//* The request code for info action PendingIntent.
-
-    private static final int REQUEST_INFO = 3;
-
-//* The intent extra value for play action.
-
-    private static final int CONTROL_TYPE_PLAY = 1;
-
-//* The intent extra value for pause action.
-
-    private static final int CONTROL_TYPE_PAUSE = 2;
-
-//* The arguments to be used for Picture-in-Picture mode.
-
-    private final PictureInPictureParams.Builder mPictureInPictureParamsBuilder =
-            new PictureInPictureParams.Builder();
-
-//* This shows the video.
-
-//    private MovieView mMovieView;
-
-//* The bottom half of the screen; hidden on landscape
-
-    private ScrollView mScrollView;
-
-//* A {@link BroadcastReceiver} to receive action item events from Picture-in-Picture mode.
-
-    private BroadcastReceiver mReceiver;
-
-    private String mPlay;
-    private String mPause;
-
-    private final View.OnClickListener mOnClickListener =
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    switch (view.getId()) {
-                        case R.id.pip:
-                            minimize();
-                            break;
+    private void getSearchListFromServer(String url, String videoTitle, RecyclerView recyclerView, LinearLayout contentLayout, TextView videosTitleTv,
+                                         ArrayList<YoutubeDataModel> mListData, final HashMap<String, YoutubeDataModel> hmMainListData) {
+        hmMainListData.clear();
+        System.out.println("**Request Videos**" + url);
+        //Retrieving response from the server
+        JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        System.out.println("**Response Videos** " + response);
+                        HashMap<String, YoutubeDataModel> hmListData = parseVideoListFromResponse(response, hmMainListData);
+                        System.out.println("****hmListData 11= " + hmListData.size());
+                        System.out.println("****hmMainListData 22= " + hmMainListData.size());
+                        if (videosIdArrayList != null && videosIdArrayList.size() != 0) {
+                            getVideoStatisticsResponse(mListData, videosIdStatisticsQuery(appendWithCommaIds(videosIdArrayList)),
+                                    videoTitle, recyclerView,
+                                    contentLayout,
+                                    videosTitleTv, hmListData);
+                        }
                     }
+
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(MainActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+            }
+        }) {
+
+            //This is for Headers If You Needed
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "text/plain");
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(js, null);
+
+    }
+
+
+    public HashMap<String, YoutubeDataModel> parseVideoListFromResponse(JSONObject jsonObject, HashMap<String, YoutubeDataModel> hmMainListData) {
+
+        HashMap<String, YoutubeDataModel> hmList = new HashMap<>();
+        videosIdArrayList.clear();
+        channelIdArrayList.clear();
+        playListIdArrayList.clear();
+        if (jsonObject.has("items")) {
+            try {
+                if (jsonObject.has("nextPageToken")) {
+                    pageToken = jsonObject.getString("nextPageToken");
                 }
-            };
 
-//* Callbacks from the {@link MovieView} showing the video playback.
+                JSONArray jsonArray = jsonObject.getJSONArray("items");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject json = jsonArray.getJSONObject(i);
+                    if (json.has("kind")) {
+                        if (json.getString("kind").equals("youtube#searchResult")) {
+                            String video_id = "";
+                            String hashMapKey = "";
+                            if (json.has("id")) {
+                                YoutubeDataModel youtubeObject = new YoutubeDataModel();
+                                JSONObject json1 = json.getJSONObject("id");
+                                kind = json1.getString("kind");
+                                JSONObject jsonSnippet = json.getJSONObject("snippet");
 
-    private MovieView.MovieListener mMovieListener =
-            new MovieView.MovieListener() {
+                                if (kind.equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
+                                    channelId = json1.getString("channelId");
+                                    channelIdArrayList.add(channelId);
+                                    youtubeObject.setVideo_id(video_id);
+                                    hashMapKey = channelId;
+                                    System.out.println("channelId = " + channelId);
+                                    youtubeObject.setChannel_id(channelId);
+                                }
+                                if (kind.equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
+                                    video_id = json1.getString("videoId");
+                                    videosIdArrayList.add(video_id);
+                                    hashMapKey = video_id;
+                                    channelId = jsonSnippet.getString("channelId");
+                                    youtubeObject.setChannel_id(channelId);
+                                    System.out.println("video_id = " + video_id);
+                                }
+                                if (kind.equalsIgnoreCase(ConstURL.PLAYLIST_TYPE)) {
+                                    playListID = json1.getString("playlistId");
+                                    playListIdArrayList.add(playListID);
+                                    hashMapKey = playListID;
+                                    channelId = jsonSnippet.getString("channelId");
+                                    youtubeObject.setChannel_id(channelId);
+                                    System.out.println("PlayListID = " + playListID);
+                                    youtubeObject.setPlayList_id(playListID);
+                                }
 
-                @Override
-                public void onMovieStarted() {
-                    // We are playing the video now. In PiP mode, we want to show an action item to
-                    // pause
-                    // the video.
-                    updatePictureInPictureActions(
-                            R.drawable.ic_pause_24dp, mPause, CONTROL_TYPE_PAUSE, REQUEST_PAUSE);
-                }
-
-                @Override
-                public void onMovieStopped() {
-                    // The video stopped or reached its end. In PiP mode, we want to show an action
-                    // item to play the video.
-                    updatePictureInPictureActions(
-                            R.drawable.ic_play_arrow_24dp, mPlay, CONTROL_TYPE_PLAY, REQUEST_PLAY);
-                }
-
-                @Override
-                public void onMovieMinimized() {
-                    // The MovieView wants us to minimize it. We enter Picture-in-Picture mode now.
-                    minimize();
-                }
-            };
-    private YouTubePlayerView mYoutubePlayerView;
-    private YouTubePlayer mYoutubePlayer;
-
-//*
-//     * Update the state of pause/resume action item in Picture-in-Picture mode.
-//     *
-//     * @param iconId The icon to be used.
-//     * @param title The title text.
-//     * @param controlType The type of the action. either {@link #CONTROL_TYPE_PLAY} or {@link
-//     *     #CONTROL_TYPE_PAUSE}.
-//     * @param requestCode The request code for the {@link PendingIntent}.
-
-
-    void updatePictureInPictureActions(
-            @DrawableRes int iconId, String title, int controlType, int requestCode) {
-        final ArrayList<RemoteAction> actions = new ArrayList<>();
-
-        // This is the PendingIntent that is invoked when a user clicks on the action item.
-        // You need to use distinct request codes for play and pause, or the PendingIntent won't
-        // be properly updated.
-        final PendingIntent intent =
-                PendingIntent.getBroadcast(
-                        MainActivity.this,
-                        requestCode,
-                        new Intent(ACTION_MEDIA_CONTROL).putExtra(EXTRA_CONTROL_TYPE, controlType),
-                        0);
-        final Icon icon = Icon.createWithResource(MainActivity.this, iconId);
-        actions.add(new RemoteAction(icon, title, title, intent));
-
-        // Another action item. This is a fixed action.
-        actions.add(
-                new RemoteAction(
-                        Icon.createWithResource(MainActivity.this, R.drawable.ic_info_24dp),
-                        getString(R.string.info),
-                        getString(R.string.info_description),
-                        PendingIntent.getActivity(
-                                MainActivity.this,
-                                REQUEST_INFO,
-                                new Intent(
-                                        Intent.ACTION_VIEW,
-                                        Uri.parse(getString(R.string.info_uri))),
-                                0)));
-
-        mPictureInPictureParamsBuilder.setActions(actions);
-
-        // This is how you can update action items (or aspect ratio) for Picture-in-Picture mode.
-        // Note this call can happen even when the app is not in PiP mode. In that case, the
-        // arguments will be used for at the next call of #enterPictureInPictureMode.
-        setPictureInPictureParams(mPictureInPictureParamsBuilder.build());
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        // Prepare string resources for Picture-in-Picture actions.
-        mPlay = getString(R.string.play);
-        mPause = getString(R.string.pause);
-
-        // View references
-        mYoutubePlayerView = (YouTubePlayerView) findViewById(R.id.youtube_player);
-        mYoutubePlayerView.initialize(GOOGLE_YOUTUBE_API_KEY, this);
-        mScrollView = findViewById(R.id.scroll);
-
-        Button switchExampleButton = findViewById(R.id.switch_example);
-        switchExampleButton.setText(getString(R.string.switch_media_session));
-        switchExampleButton.setOnClickListener(new SwitchActivityOnClick());
-
-        // Set up the video; it automatically starts.
-//        mMovieView.setMovieListener(mMovieListener);
-        findViewById(R.id.pip).setOnClickListener(mOnClickListener);
-    }
-
-    @Override
-    protected void onStop() {
-        // On entering Picture-in-Picture mode, onPause is called, but not onStop.
-        // For this reason, this is the place where we should pause the video playback.
-//        mMovieView.pause();
-        super.onStop();
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        if (!isInPictureInPictureMode()) {
-            // Show the video controls so the video can be easily resumed.
-//            mMovieView.showControls();
-        }
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        adjustFullScreen(newConfig);
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            adjustFullScreen(getResources().getConfiguration());
-        }
-    }
-
-    @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
-
-    }
-
-    @Override
-    public void onPictureInPictureModeChanged(
-            boolean isInPictureInPictureMode, Configuration configuration) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, configuration);
-        if (isInPictureInPictureMode) {
-            // Starts receiving events from action items in PiP mode.
-            mReceiver =
-                    new BroadcastReceiver() {
-                        @Override
-                        public void onReceive(Context context, Intent intent) {
-                            if (intent == null
-                                    || !ACTION_MEDIA_CONTROL.equals(intent.getAction())) {
-                                return;
-                            }
-
-                            // This is where we are called back from Picture-in-Picture action
-                            // items.
-                            final int controlType = intent.getIntExtra(EXTRA_CONTROL_TYPE, 0);
-                            switch (controlType) {
-                                case CONTROL_TYPE_PLAY:
-                                    mYoutubePlayer.play();
-                                    break;
-                                case CONTROL_TYPE_PAUSE:
-                                    mYoutubePlayer.pause();
-                                    break;
+                                String title = jsonSnippet.getString("title");
+                                String description = jsonSnippet.getString("description");
+                                System.out.println("description = " + description);
+                                String publishedAt = jsonSnippet.getString("publishedAt");
+                                System.out.println("publishedAt = " + publishedAt);
+                                String thumbnailHigh = jsonSnippet.getJSONObject("thumbnails").getJSONObject("high").getString("url");
+                                String thumbnailMedium = jsonSnippet.getJSONObject("thumbnails").getJSONObject("medium").getString("url");
+                                String thumbnailDefault = jsonSnippet.getJSONObject("thumbnails").getJSONObject("default").getString("url");
+                                youtubeObject.setTitle(title);
+                                youtubeObject.setDescription(description);
+                                youtubeObject.setPublishedAt(publishedAt);
+                                youtubeObject.setThumbnailHigh(thumbnailHigh);
+                                youtubeObject.setThumbnailMedium(thumbnailMedium);
+                                youtubeObject.setThumbnailDefault(thumbnailDefault);
+                                youtubeObject.setKind(kind);
+                                youtubeObject.setChannelTitle(jsonSnippet.getString("channelTitle"));
+                                hmList.put(hashMapKey, youtubeObject);
                             }
                         }
-                    };
-            registerReceiver(mReceiver, new IntentFilter(ACTION_MEDIA_CONTROL));
-        } else {
-            // We are out of PiP mode. We can stop receiving events from it.
-            unregisterReceiver(mReceiver);
-            mReceiver = null;
-            // Show the video controls if the video is not playing
-//            if (mMovieView != null && !mMovieView.isPlaying()) {
-//                mMovieView.showControls();
-//            }
+                    }
+
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return hmList;
+    }
+
+    private void getVideoStatisticsResponse(ArrayList<YoutubeDataModel> mListData, String url, String videosTitle
+            , RecyclerView recyclerView, LinearLayout contentLayout, TextView videosTitleTv,
+                                            HashMap<String, YoutubeDataModel> hmMainListData) {
+        System.out.println("Request Video Statistics**" + url);
+        JsonObjectRequest js = new JsonObjectRequest(Request.Method.GET, url, jsonObjUserDetail,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        System.out.println("**Get Video Statistics Response**" + response);
+                        parseTrendingStatisticsResponse(response, hmMainListData);
+                        System.out.println("**hmMainListData1 = " + hmMainListData.size());
+                        System.out.println("**mListData1 = " + mListData.size());
+                        mListData.addAll(new ArrayList<YoutubeDataModel>(hmMainListData.values()));
+                        System.out.println("**hmMainListData2 = " + hmMainListData.size());
+                        System.out.println("**mListData2 = " + mListData.size());
+                        prepareVideosGridRV(mListData, recyclerView,
+                                contentLayout,
+                                videosTitleTv, videosTitle);
+                    }
+
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(MainActivity.this, "Server is not reachable!!! " + error, Toast.LENGTH_SHORT).show();
+            }
+        }) {
+
+            //This is for Headers If You Needed
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "text/plain");
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(js, null);
+    }
+
+    private void parseTrendingStatisticsResponse(JSONObject jsonObject, HashMap<String, YoutubeDataModel> hmMainListData) {
+        HashMap<String, YoutubeDataModel> hmList = new HashMap<String, YoutubeDataModel>();
+        if (jsonObject.has("items")) {
+            try {
+                JSONArray jsonArray = jsonObject.getJSONArray("items");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject json = jsonArray.getJSONObject(i);
+                    String video_id = "";
+                    String hashMapKey = "";
+//                    YoutubeDataModel youtubeObject = new YoutubeDataModel();
+                    kind = json.getString("kind");
+                    if (hmMainListData.containsKey(json.getString("id"))) {
+                        if (kind.equalsIgnoreCase(ConstURL.CHANNEL_TYPE)) {
+                            channelId = json.getString("id");
+                            hashMapKey = channelId;
+                            hmMainListData.get(hashMapKey).setChannel_id(channelId);
+                            System.out.println("channelId = " + channelId);
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("videoCount"))
+                                hmMainListData.get(hashMapKey).setVideoCount(json.getJSONObject("statistics").getString("videoCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("viewCount"))
+                                hmMainListData.get(hashMapKey).setViewCount(json.getJSONObject("statistics").getString("viewCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("subscriberCount"))
+                                hmMainListData.get(hashMapKey).setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
+                        }
+                        if (kind.equalsIgnoreCase(ConstURL.VIDEOS_TYPE)) {
+                            video_id = json.getString("id");
+                            hashMapKey = video_id;
+                            hmMainListData.get(hashMapKey).setVideo_id(video_id);
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("duration"))
+                                hmMainListData.get(hashMapKey).setDuration(json.getJSONObject("contentDetails").getString("duration"));
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("subscriberCount"))
+                                hmMainListData.get(hashMapKey).setSubscriberCount(json.getJSONObject("statistics").getString("subscriberCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("viewCount"))
+                                hmMainListData.get(hashMapKey).setViewCount(json.getJSONObject("statistics").getString("viewCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("likeCount"))
+                                hmMainListData.get(hashMapKey).setLikeCount(json.getJSONObject("statistics").getString("likeCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("dislikeCount"))
+                                hmMainListData.get(hashMapKey).setDislikeCount(json.getJSONObject("statistics").getString("dislikeCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("favoriteCount"))
+                                hmMainListData.get(hashMapKey).setFavoriteCount(json.getJSONObject("statistics").getString("favoriteCount"));
+                            if (json.has("statistics") && json.getJSONObject("statistics").has("commentCount"))
+                                hmMainListData.get(hashMapKey).setCommentCount(json.getJSONObject("statistics").getString("commentCount"));
+                            System.out.println("video_id = " + video_id);
+                        }
+                        if (kind.equalsIgnoreCase(ConstURL.PLAYLIST_TYPE)) {
+                            playListID = json.getString("id");
+                            hashMapKey = playListID;
+                            hmMainListData.get(hashMapKey).setPlayList_id(playListID);
+                            if (json.has("contentDetails") && json.getJSONObject("contentDetails").has("itemCount"))
+                                hmMainListData.get(hashMapKey).setVideoCount(json.getJSONObject("contentDetails").getString("itemCount"));
+                            System.out.println("PlayListID = " + playListID);
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+//            adapter.notifyDataSetChanged();
         }
     }
 
-//* Enters Picture-in-Picture mode.
-
-    void minimize() {
-        if (mYoutubePlayerView== null) {
-            return;
-        }
-        // Hide the controls in picture-in-picture mode.
-//        mMovieView.hideControls();
-        // Calculate the aspect ratio of the PiP screen.
-        Rational aspectRatio = new Rational(mYoutubePlayerView.getWidth(), mYoutubePlayerView.getHeight());
-        mPictureInPictureParamsBuilder.setAspectRatio(aspectRatio).build();
-        enterPictureInPictureMode(mPictureInPictureParamsBuilder.build());
+    private String videosIdStatisticsQuery(String ids) {
+        return "https:///www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
     }
 
-//*
-//     * Adjusts immersive full-screen flags depending on the screen orientation.
-//     *
-//     * @param config The current {@link Configuration}.
-
-
-    private void adjustFullScreen(Configuration config) {
-        final View decorView = getWindow().getDecorView();
-        if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            decorView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-            mScrollView.setVisibility(View.GONE);
-//            mMovieView.setAdjustViewBounds(false);
-        } else {
-            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-            mScrollView.setVisibility(View.VISIBLE);
-//            mMovieView.setAdjustViewBounds(true);
+    private String appendWithCommaIds(ArrayList<String> idArrayList) {
+        StringBuilder result = new StringBuilder();
+        for (String string : idArrayList) {
+            result.append(string);
+            result.append(",");
         }
-    }
-
-    @Override
-    public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer youTubePlayer, boolean wasRestored) {
-        youTubePlayer.setPlayerStateChangeListener(playerStateChangeListener);
-        youTubePlayer.setPlaybackEventListener(playbackEventListener);
-        if (!wasRestored) {
-            youTubePlayer.loadVideo("c2UNv38V6y4");
-        }
-        mYoutubePlayer = youTubePlayer;
-    }
-
-    private YouTubePlayer.PlaybackEventListener playbackEventListener = new YouTubePlayer.PlaybackEventListener() {
-        @Override
-        public void onPlaying() {
-
-        }
-
-        @Override
-        public void onPaused() {
-
-        }
-
-        @Override
-        public void onStopped() {
-
-        }
-
-        @Override
-        public void onBuffering(boolean b) {
-
-        }
-
-        @Override
-        public void onSeekTo(int i) {
-
-        }
-    };
-
-    private YouTubePlayer.PlayerStateChangeListener playerStateChangeListener = new YouTubePlayer.PlayerStateChangeListener() {
-        @Override
-        public void onLoading() {
-
-        }
-
-        @Override
-        public void onLoaded(String s) {
-            mYoutubePlayer.play();
-        }
-
-        @Override
-        public void onAdStarted() {
-
-        }
-
-        @Override
-        public void onVideoStarted() {
-
-        }
-
-        @Override
-        public void onVideoEnded() {
-
-        }
-
-        @Override
-        public void onError(YouTubePlayer.ErrorReason errorReason) {
-
-        }
-    };
-
-    @Override
-    public void onInitializationFailure(YouTubePlayer.Provider provider, YouTubeInitializationResult youTubeInitializationResult) {
-        System.out.println("YouTubePlayer.Provider *****= " + provider);
-        System.out.println("youTubeInitializationResult = " + youTubeInitializationResult);
-    }
-
-
-//* Launches {@link MediaSessionPlaybackActivity} and closes this activity.
-
-    private class SwitchActivityOnClick implements View.OnClickListener {
-        @Override
-        public void onClick(View view) {
-            startActivity(new Intent(view.getContext(), MediaSessionPlaybackActivity.class));
-            finish();
-        }
+        return result.length() > 0 ? result.substring(0, result.length() - 1) : "";
     }
 }
-*/

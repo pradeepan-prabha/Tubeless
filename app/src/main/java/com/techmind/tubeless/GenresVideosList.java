@@ -88,7 +88,6 @@ public class GenresVideosList extends AppCompatActivity {
     ArrayList<String> videosIdArrayList = new ArrayList<String>();
     ArrayList<String> channelIdArrayList = new ArrayList<String>();
     ArrayList<String> playListIdArrayList = new ArrayList<String>();
-    //    ArrayList<YoutubeDataModel> mainArrayList = new ArrayList<YoutubeDataModel>();
     private HashMap<String, YoutubeDataModel> hmMainListData = new HashMap<>();
     private HashMap<String, YoutubeDataModel> hmTempListData = new HashMap<>();
     private ProgressBar loadingProgressBar;
@@ -511,12 +510,12 @@ public class GenresVideosList extends AppCompatActivity {
         }
     }
 
-    private String channelIdStatisticsQuery(String ids) {
-        return "https://www.googleapis.com/youtube/v3/channels?part=statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
-    }
-
     private String videosIdStatisticsQuery(String ids) {
         return "https:///www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
+    }
+
+    private String channelIdStatisticsQuery(String ids) {
+        return "https://www.googleapis.com/youtube/v3/channels?part=statistics&id=" + ids + "&key=" + ConstURL.GOOGLE_YOUTUBE_API_KEY;
     }
 
     private String playListIdStatisticsQuery(String ids) {

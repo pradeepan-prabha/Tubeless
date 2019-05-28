@@ -58,6 +58,7 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.ui.utils.FadeViewHelper;
 import com.squareup.picasso.Picasso;
 import com.techmind.tubeless.Sqlite.PostsDatabaseHelper;
 import com.techmind.tubeless.adapters.CommentAdapter;
@@ -79,6 +80,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -178,6 +180,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements View.OnCli
      */
     private static final int CONTROL_TYPE_PAUSE = 2;
     private BroadcastReceiver mReceiver;
+    private ImageButton minimizeIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -187,7 +190,9 @@ public class VideoPlayerActivity extends AppCompatActivity implements View.OnCli
             youtubeDataModel = getIntent().getParcelableExtra(YoutubeDataModel.class.toString());
             mYoutubePlayerView = findViewById(R.id.youtube_player_view);
             getLifecycle().addObserver(mYoutubePlayerView);
-
+//            mYoutubePlayerView.initialize(new AbstractYouTubePlayerListener() {
+//            });
+            ArrayList<String> arrayList=new ArrayList<>();
             mYoutubePlayerView.addYouTubePlayerListener(new AbstractYouTubePlayerListener() {
                 @Override
                 public void onReady(@NonNull YouTubePlayer youTubePlayer) {
@@ -228,6 +233,11 @@ public class VideoPlayerActivity extends AppCompatActivity implements View.OnCli
             uploaderRootLayout = findViewById(R.id.detail_uploader_root_layout);
             videoUploadDateView = findViewById(R.id.detail_upload_date_view);
             popupBtn = findViewById(R.id.popupBtn);
+            minimizeIcon = findViewById(R.id.minimize);
+//            FadeViewHelper fadeViewHelper = new FadeViewHelper(minimizeIcon);
+//            fadeViewHelper.setAnimationDuration(FadeViewHelper.DEFAULT_ANIMATION_DURATION);
+//            fadeViewHelper.setFadeOutDelay(FadeViewHelper.DEFAULT_FADE_OUT_DELAY);
+
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -237,6 +247,28 @@ public class VideoPlayerActivity extends AppCompatActivity implements View.OnCli
             mPlay = getString(R.string.play);
             mPause = getString(R.string.pause);
         }
+        minimizeIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                /*if (Build.VERSION.SDK_INT >= 26) {
+                    if (!PermissionHelper.isPopupEnabled(getApplicationContext())) {
+                        PermissionHelper.showPopupEnablementToast(getApplicationContext());
+                        return;
+                    }
+                }*/
+                if (Build.VERSION.SDK_INT >= 26) {
+                    //Trigger PiP mode
+                    try {
+                        startPictureInPictureFeature();
+                    } catch (IllegalStateException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(VideoPlayerActivity.this, "API 26 needed to perform PiP", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+        });
         popupBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -297,7 +329,6 @@ public class VideoPlayerActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void startPictureInPictureFeature() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             System.out.println("mYoutubePlayerView.getWidth() = " + mYoutubePlayerView.getWidth());
             System.out.println(" mYoutubePlayerView.getHeight() = " + mYoutubePlayerView.getHeight());
@@ -976,6 +1007,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements View.OnCli
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode);
         if (isInPictureInPictureMode) {
+            minimizeIcon.setVisibility(View.GONE);
 //            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
 //                mYoutubePlayer.play();
 //            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
@@ -984,6 +1016,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements View.OnCli
             System.out.println("isInPictureInPictureMode = " + isInPictureInPictureMode);
         } else {
             scrollLinearLayout.setVisibility(View.VISIBLE);
+            minimizeIcon.setVisibility(View.VISIBLE);
 //            if (mYoutubePlayer != null && !mYoutubePlayer.isPlaying())
 //                mYoutubePlayer.play();
 //                mYoutubePlayer.play();
