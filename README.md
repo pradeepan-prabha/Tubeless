@@ -3,6 +3,4 @@ Tubeless can search videos, channels and playlists, play music and movie with fu
 The floating tube pop-up player allows you to use your apps while playing YouTube music and YouTube video.
 
 ## Example Screenshots
-
-### Home Page
 <img src="/tubeless_screenshot.png" alt="Home Page" >
